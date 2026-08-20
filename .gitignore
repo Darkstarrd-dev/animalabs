@@ -7,7 +7,7 @@ anima.exe~
 # --- runtime generated outputs (root only; examples in animalab/jobs are tracked) ---
 /output/
 /jobs/
-
+animalab/jobs/
 # --- local agent / tooling caches ---
 .agents/
 .opencode/
