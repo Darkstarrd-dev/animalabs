@@ -91,3 +91,25 @@
 ---
 
 ---
+
+### 11.11 eye-back 景别 (实测 2026-08-20 · frieren/fern)
+
+| 景别 | frieren eye-back | fern eye-back | 要点 | Job |
+|---|---|---|---|---|
+| 头像 head (close-up) | ✅ 正背稳定 | ✅ v3 后为正背（需 `back of head, eyes not visible`） | 头像易翻正面，需强 `direct back view` | `frieren-fern-eye-back-v3` |
+| 胸像 bust | ✅ | ✅ v4 后为正背（v3 曾全正面） | 同头像，增加 `back of shoulders` | `v4` |
+| 半身 half | ✅ | ✅ | 最稳，无需加权 | `v1` |
+| 3/4 cowboy | frieren 稳仅 1-2 侧蹲；fern 5/5 蹲 | 同 frieren，fern 长袍加重 | 长袍需 `long dress while standing` + `(standing:1.5)`，仍无解 | `v2~v4` 无解 |
+| 全身 full | ✅ | ✅ | `feet visible` 隐含站立 | `v1` |
+
+| 维度 | 结论 |
+|---|---|
+| eye-back 锚定 | `eye-level, from behind, facing away, direct back view` 稳 |
+| 侧偏 | 单用 `three-quarter view` 在后机位会飘，必成对 |
+| 站立 | cowboy 无 `standing` 时回落抱膝坐，需显式并加权 |
+| 种族/服装差异 | 同 prompt 下 fern 比 frieren 更易偏侧/蹲，长袍加重 |
+
+> 头/胸/半身/全身可用作正背面基座；**fern 的 cowboy 判为无解**（数据召回限制），后续避免该组合。
+
+
+---

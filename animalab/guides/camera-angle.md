@@ -80,3 +80,12 @@
 - 角度强度：`moderately high/low, directly above/below`
 
 > 下一步：按此 40 点逐一整理可复制 prompt，区分 脸朝向/身体朝向/机位/视线 四轴。
+
+
+## 9 实测 (2026-08-20 · eye-back @ 768×1024 Turbo)
+
+- frieren: 5 种景别 4/5 正常，仅 cowboy 1–2 张侧蹲；fern: cowboy 5/5 蹲 + head/bust 曾正面，v3/v4 后 head 已正背、bust 在 v4 后已正背。
+- 结论：`eye-level, from behind, facing away` 在 head/bust/half/full 稳定；**fern 的 cowboy 长袍 + eye-back 判无解**，避免使用。
+
+详见 Jobs: `frieren-fern-eye-back-framings` → `frieren-fern-eye-back-v4`。
+

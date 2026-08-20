@@ -26,7 +26,9 @@
 | `anthro` 未屏蔽 | 兽耳变异 | 负面加 `anthro, furry` |
 | 裸 `artist name` 占位未删 | 负面残留 | 替换为具体画师或删 |
 | `beta57` 等调度器未装节点 | 无效 | 安装 RES4LYF custom nodes |
-
----
+| `cowboy shot + fern 长袍 + eye-back` 时 `standing` 被压制为蹲姿 | fern cowboy 5/5 蹲 | 追加 `(standing:1.4~1.5), upright, straight legs, feet on ground` + 负面 `sitting, squatting, kneeling, crouching` + 长袍需说明 `long dress draping while standing` | `frieren-fern-eye-back-v2~v4` 提示 robe 易触发抱膝 |
+| `head / bust + from behind` 在 fern 上误召正面 | fern 头像 bust 全正面 | 加 `back of head, nape, eyes not visible, not front view, direct back view` + 负面 `front view, facing viewer, face visible` | `v3~v4 fern-head/bust` 已修正面 |
+| `three-quarter view` 误配后机位导致侧偏 | 后 45° 漂移到侧面 | 后机位必须 `from behind, three-quarter view` 成对，勿单用 `three-quarter view` | `camera-angle §3` |
+| 多视图同值种子仅测抖动 | 组内 5 seed 同 prompt 误判好坏 | 组内选优无意义，跨 `subgroup/角度` 对比才有意义；做 prompt 对比时每组 1 seed 即可 | `frieren-halfbody-angles` 75→375 |
 
 ---

@@ -2,7 +2,7 @@
 
 > **定位**：Anima (anima_turboV10 / Base / Aesthetic / 2.9B) 的可验证 prompt 体系 + 社区参考获取路径 + 可增长 Cookbook。  
 > **原则**：Tag 负责“画什么”(atomic visual concepts)，自然语言负责“怎么组织”(relationships / spatial logic)。混合优于纯 tag 或纯自然语言。  
-> **版本**：v0.3 — 2026-08-20 / 目录式入口 / 维护：随实测持续追加 Cookbook 条目与不良用例。  
+> **版本**：v0.4 — 2026-08-20 / 目录式入口 + eye-back 实测 / 维护：随实测持续追加 Cookbook 条目与不良用例。  
 > **入口**：`start.md` §8 引用本文；分册在 `guides/`；运行时 `anima.exe` 不依赖本文。
 
 ---
@@ -296,6 +296,7 @@ worst quality, low quality, blurry, text, watermark
 |---|---|---|---|---|
 | 2026-08-20 | width 对齐 | `width 100→104 (8x)` + warnings | 走通，`104×104` 落盘 | `example:4` |
 | 2026-08-20 | sampler 对比 | `er_sde/simple/cfg1` vs `euler/normal/cfg2` vs `dpmpp_2m/karras/cfg1.5` | `euler/cfg2` 更锐，待补图 | `turbo-compare` |
+| 2026-08-20 | eye-back 景别 (frieren/fern 768×1024) | 5种构图×2角色 eye-back，fern cowboy 长袍无解、bust/head 需直视背面约束 | 头像/胸像加 `back of head, eyes not visible` 后修正面；cowboy 站立需 `(standing:1.5)` 仍有蹲，长袍判定无解 | `frieren-fern-eye-back-v4` |
 | 2026-08-20 | 指南 v0.2 扩充 | 遍历 9 源：Anima-Prompt/AnimaTool/Comfyui-Anima-Prompt/circlestone/README/Finnsprite/2.9B/Tomiigo pipeline/Style Explorer/Danbooru | 补变体表/转义/权重/安全必选/单行/语义映射/采样调度/分辨率/宽高比/数据集标签/组织层 | — |
 |  |  |  |  |  |
 |  |  |  |  |  |
