@@ -195,5 +195,17 @@
   </div>
 </div>
 
-<script src="web/app.js"></script>
+<!-- app.js 已拆为 js/ 目录下的 12 个按序加载的小模块（无构建，兼容 file:// 与 http://） -->
+<script src="web/js/00-state.js"></script>
+<script src="web/js/01-utils.js"></script>
+<script src="web/js/02-tree.js"></script>
+<script src="web/js/03-job.js"></script>
+<script src="web/js/04-grouping.js"></script>
+<script src="web/js/05-gallery.js"></script>
+<script src="web/js/06-review.js"></script>
+<script src="web/js/07-drawer.js"></script>
+<script src="web/js/08-lightbox.js"></script>
+<script src="web/js/09-toolbar.js"></script>
+<script src="web/js/10-run.js"></script>
+<script src="web/js/11-init.js"></script>
 </html>
