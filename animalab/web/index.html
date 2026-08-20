@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Anima Lab — 批量画廊 · 管理看板</title>
+<link rel="stylesheet" href="web/style.css">
+<body>
+<header class="topbar" role="banner">
+  <div class="brand" aria-label="Anima Lab">
+    <button id="btnTreeToggle" class="btn-icon" title="折叠/展开左侧导航" aria-label="切换左侧导航">≡</button>
+    <div class="brand-mark" aria-hidden="true">AL</div>
+    <div>
+      <h1>Anima Lab</h1>
+      <small>Batch Gallery · Admin</small>
+    </div>
+  </div>
+  <div class="actions" role="toolbar" aria-label="全局操作">
+    <span id="livePill" class="pill live" title="服务在线">● LIVE</span>
+    <span id="status" class="pill" aria-live="polite"></span>
+    <button id="btnKill" class="btn-ghost" title="释放端口/清理幽灵进程">Kill</button>
+    <button id="btnDelJob" class="btn-ghost" title="删除当前选中的包（含定义与图片）" aria-label="删除当前包">🗑 删除包</button>
+    <button id="btnRun" class="btn" aria-label="运行当前批次">▶ 运行批次</button>
+    <button id="btnQuit" class="btn-danger" title="关闭网页并停止后端服务">Quit</button>
+  </div>
+</header>
+
+<div id="fileOff" class="fileoff" role="alert" aria-live="assertive">
+  <div class="card" style="padding:18px;max-width:520px">
+    <h3 style="margin:0 0 8px">需要启动后端</h3>
+    <p style="margin:0;color:var(--muted)">请运行 <code>anima.exe</code>（双击）或 <code>./anima.exe serve --no-open</code> 后访问<br><code>http://127.0.0.1:8765</code></p>
+    <p style="margin:10px 0 0"><code>anima kill</code> 可释放被占用的 8765 端口</p>
+  </div>
+</div>
+
+<div class="layout" id="layout">
+  <!-- 最左侧：月→日→包 合并列 -->
+  <aside class="panel" id="panelTree" aria-label="导航树">
+    <div class="panel-head">
+      <h2>导航 Tree</h2>
+      <p>最小单位为月 · 月展开日 · 日展开包</p>
+    </div>
+    <div class="panel-body">
+      <div id="tree" class="tree" role="tree" aria-label="月日包树"></div>
+      <div id="treeEmpty" class="empty" style="display:none"><strong>暂无批次</strong><br>在 <code>jobs/&lt;YYYY-MM-DD&gt;/*.json</code> 新建任务后刷新</div>
+    </div>
+  </aside>
+
+  <!-- 次左侧：场景 -->
+  <aside class="panel" id="panelScenes" aria-label="场景">
+    <div class="panel-head">
+      <h2>分组 Groups</h2>
+      <p><span id="sceneSub">选择批次后按分组聚合</span></p>
+    </div>
+    <div class="panel-body">
+      <ul id="sceneList" class="scene-list" role="list"></ul>
+      <div id="sceneEmpty" class="empty">先选择左侧的批次包</div>
+    </div>
+  </aside>
+
+  <main class="gallery-wrap" id="galleryWrap" aria-label="画廊与管理">
+    <div class="gallery-fixed">
+    <section class="kpi" aria-label="概览">
+      <div class="kpi-card">
+        <div class="kpi-label">Jobs</div>
+        <div id="kpiJobs" class="kpi-value">—</div>
+        <div class="kpi-hint">当前日期的批次数量</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Images</div>
+        <div id="kpiImages" class="kpi-value">—</div>
+        <div class="kpi-hint">outputs 已落盘张数</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Kept</div>
+        <div id="kpiKept" class="kpi-value" style="color:var(--accent)">—</div>
+        <div class="kpi-hint">已保留（人工审核）</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Review</div>
+        <div id="kpiReview" class="kpi-value">—</div>
+        <div class="kpi-hint">未审核 / 已驳回 / 失败</div>
+      </div>
+    </section>
+
+    <div class="toolbar" id="toolbar" role="toolbar" aria-label="筛选与搜索">
+      <button class="chip active" data-filter="all" aria-pressed="true">全部</button>
+      <button class="chip" data-filter="unreviewed" aria-pressed="false">未审核</button>
+      <button class="chip" data-filter="kept" aria-pressed="false">已保留</button>
+      <button class="chip" data-filter="rejected" aria-pressed="false">已驳回</button>
+      <button class="chip" data-filter="failed" aria-pressed="false">失败</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px" aria-hidden="true"></span>
+      <label class="visually-hidden" for="tagFilter">按标签过滤</label>
+      <div class="search-wrap">
+        <input id="tagFilter" type="search" placeholder="按 tags 过滤（逗号分隔，如 hand, artifact）" autocomplete="off">
+      </div>
+      <label class="visually-hidden" for="sortBy">排序</label>
+      <select id="sortBy" class="select" aria-label="排序">
+        <option value="id">按 ID</option>
+        <option value="status">按状态</option>
+        <option value="seed">按 Seed</option>
+      </select>
+      <div class="zoom-wrap" title="缩略图大小">
+        <span class="zoom-label">缩放</span>
+        <input id="thumbSlider" type="range" min="220" max="500" step="10" value="260" aria-label="缩略图大小">
+        <span id="thumbVal" class="zoom-val">260px</span>
+      </div>
+      <span id="countInfo" style="color:var(--muted);font:500 12px/1 Fira Code, monospace;margin-left:auto" aria-live="polite"></span>
+    </div>
+
+    <div id="batchBar" class="batchbar" style="display:none" aria-live="polite">
+      <span id="batchCount" style="font:600 12px/1 Inter;color:var(--text)"></span>
+      <span style="flex:1"></span>
+      <button id="batchKept" class="btn-ghost btn-sm">批量保留</button>
+      <button id="batchRejected" class="btn-ghost btn-sm">批量驳回</button>
+      <button id="batchClear" class="btn-ghost btn-sm">清空选择</button>
+    </div>
+
+    </div>
+    <div class="gallery-scroll" id="galleryScroll">
+    <div id="grid" class="grid" role="list" aria-label="图片网格"></div>
+    <div id="galleryEmpty" class="empty" style="display:none">空批次 — 先运行批次或调整筛选</div>
+    <div id="hint" class="notice" style="display:none"></div>
+    <section aria-label="提示" class="notice">
+      <strong>工作流：</strong> 左侧选月→日→包 → 次左选场景→比例 → 右侧画廊筛选/批量标注 → 灯箱查看 9 维与标注表单。<code>#date=&amp;job=&amp;item=&amp;scene=</code> 可分享。生成中自动增量追加，无需刷新。
+    </section>
+    </div>
+  </main>
+</div>
+
+<aside id="drawer" class="drawer" aria-label="详情抽屉" aria-hidden="true">
+  <div class="drawer-head">
+    <h3 id="drawerTitle">详情</h3>
+    <span style="flex:1"></span>
+    <button id="drawerClose" class="btn-icon" aria-label="关闭抽屉">✕</button>
+  </div>
+  <div id="drawerBody" class="drawer-body"></div>
+</aside>
+
+<div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="大图预览">
+  <div class="box lb-box">
+    <div class="media" id="lbMedia">
+      <button id="lbPrev" class="lb-nav prev" aria-label="上一张">‹</button>
+      <img id="lbImg" alt="预览大图">
+      <button id="lbNext" class="lb-nav next" aria-label="下一张">›</button>
+    </div>
+    <div class="lb-meta" id="lbMeta"></div>
+  </div>
+</div>
+
+<script src="web/app.js"></script>
+</html>

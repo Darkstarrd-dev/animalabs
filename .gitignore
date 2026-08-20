@@ -1,0 +1,25 @@
+# --- build artifacts (do not track) ---
+anima.exe
+anima.exe~
+*.exe
+*.tmp
+
+# --- runtime generated outputs (root only; examples in animalab/jobs are tracked) ---
+/output/
+/jobs/
+
+# --- local agent / tooling caches ---
+.agents/
+.opencode/
+.vscode/
+.idea/
+
+# --- python / go caches ---
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+# --- OS ---
+.DS_Store
+Thumbs.db

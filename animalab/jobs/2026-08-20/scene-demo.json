@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "job_id": "scene-demo",
+  "date": "2026-08-20",
+  "created_at": "2026-08-20T15:00:00Z",
+  "defaults": { "width": 1024, "height": 768, "steps": 4, "negative_prompt": "worst quality, low quality, blurry", "sampler": "er_sde", "scheduler": "simple", "cfg": 1.0 },
+  "items": [
+    { "id": "forest-01", "scene": "forest", "variant": "4:3", "positive_prompt": "masterpiece, best quality, highres, 1girl, solo, forest, sunlight, soft lighting", "status": "pending", "review": { "verdict": "unreviewed", "reason": "", "tags": [], "reviewed_at": "" } },
+    { "id": "forest-02", "scene": "forest", "variant": "16:9", "width": 1280, "height": 720, "positive_prompt": "masterpiece, best quality, highres, 1girl, solo, forest, morning mist", "status": "pending", "review": { "verdict": "unreviewed", "reason": "", "tags": [], "reviewed_at": "" } },
+    { "id": "forest-03", "scene": "forest", "positive_prompt": "masterpiece, best quality, highres, 1girl, solo, forest, campfire, night", "width": 768, "height": 768, "status": "pending", "review": { "verdict": "unreviewed", "reason": "", "tags": [], "reviewed_at": "" } },
+    { "id": "city-01", "scene": "city", "variant": "1:1", "width": 768, "height": 768, "positive_prompt": "masterpiece, best quality, highres, 1girl, solo, city street, neon lights, rain", "status": "pending", "review": { "verdict": "unreviewed", "reason": "", "tags": [], "reviewed_at": "" } },
+    { "id": "city-02", "scene": "city", "positive_prompt": "masterpiece, best quality, highres, 1girl, solo, city rooftop, sunset", "status": "pending", "review": { "verdict": "unreviewed", "reason": "", "tags": [], "reviewed_at": "" } },
+    { "id": "nogroup-01", "positive_prompt": "masterpiece, best quality, anime, landscape, lake, mountains", "status": "pending", "review": { "verdict": "unreviewed", "reason": "", "tags": [], "reviewed_at": "" } }
+  ]
+}
