@@ -2,13 +2,22 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const api = p => fetch(p).then(r => { if(!r.ok) throw new Error(r.status+' '+r.statusText); return r.json(); });
 
-let state = { date:'', job:'', item:'', scene:'', variant:'', filter:'all', tagFilter:'', sortBy:'id', dates:[], jobsByDate:{}, curJob:null, thumbSize:260 };
+let state = { date:'', job:'', item:'', scene:'', variant:'', filter:'all', tagFilter:'', sortBy:'id', dates:[], jobsByDate:{}, curJob:null, thumbSize:260, preset:'turbo', unet:'', lora1:'off', lora2:'off', lora3:'off', wt1:0.8, wt2:1, wt3:1 };
 let selectedIds = new Set();
 let monthCollapsed = new Set();
 let dayCollapsed = new Set();
 let sceneCollapsed = new Set();
 let pollTimer = null;
 let treeCollapsed = localStorage.getItem('anima.treeCollapsed')==='1';
+let hdrMeta={unets:[],loras:[]};
+function hdrKey(k){ return 'anima.hdr.'+k; }
+function saveHdr(){ try{ localStorage.setItem(hdrKey('preset'), state.preset||'turbo'); localStorage.setItem(hdrKey('unet'), state.unet||''); localStorage.setItem(hdrKey('lora1'), state.lora1||'off'); localStorage.setItem(hdrKey('lora2'), state.lora2||'off'); localStorage.setItem(hdrKey('lora3'), state.lora3||'off'); localStorage.setItem(hdrKey('wt1'), String(state.wt1)); localStorage.setItem(hdrKey('wt2'), String(state.wt2)); localStorage.setItem(hdrKey('wt3'), String(state.wt3)); }catch(e){} }
+function loadHdr(){ try{ const p=localStorage.getItem(hdrKey('preset')); if(p) state.preset=p; state.unet=localStorage.getItem(hdrKey('unet'))||''; state.lora1=localStorage.getItem(hdrKey('lora1'))||'off'; state.lora2=localStorage.getItem(hdrKey('lora2'))||'off'; state.lora3=localStorage.getItem(hdrKey('lora3'))||'off'; const w1=localStorage.getItem(hdrKey('wt1')); const w2=localStorage.getItem(hdrKey('wt2')); const w3=localStorage.getItem(hdrKey('wt3')); if(w1!=null) state.wt1=parseFloat(w1)||0.8; if(w2!=null) state.wt2=parseFloat(w2)||1; if(w3!=null) state.wt3=parseFloat(w3)||1; }catch(e){} }
+function applyHdrToDOM(){ const s=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v; }; s('selPreset', state.preset||'turbo'); s('selUnet', state.unet||''); s('selLora1', state.lora1||'off'); s('selLora2', state.lora2||'off'); s('selLora3', state.lora3||'off'); s('wtLora1', state.wt1); s('wtLora2', state.wt2); s('wtLora3', state.wt3); syncLoraWtDisabled(); }
+function syncLoraWtDisabled(){ [['selLora1','wtLora1'],['selLora2','wtLora2'],['selLora3','wtLora3']].forEach(function(pair){ const a=pair[0],b=pair[1]; const s=document.getElementById(a), w=document.getElementById(b); if(s&&w){ const off=!s.value||s.value==='off'; w.disabled=off; w.style.opacity=off?'.45':'1'; } }); }
+function buildHdrPayload(){ const loras=[]; [['lora1','wt1'],['lora2','wt2'],['lora3','wt3']].forEach(function(pair){ const k=pair[0],wk=pair[1]; const name=state[k]; if(name && name!=='off'){ let wt=parseFloat(state[wk]); if(!isFinite(wt)) wt=1; loras.push({name:name, weight:wt}); }}); return {preset:state.preset||'turbo', unet_name: state.unet||'', loras:loras}; }
+async function fetchHdrMeta(){ try{ const r=await fetch('/api/meta'); if(!r.ok) return; const j=await r.json(); hdrMeta.unets=j.unets||[]; hdrMeta.loras=j.loras||[]; populateHdrSelects(); }catch(e){} }
+function populateHdrSelects(){ const selU=document.getElementById('selUnet'); if(selU){ const cur=state.unet||''; selU.innerHTML='<option value="">(follow preset)</option>'+hdrMeta.unets.map(function(n){ return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>'; }).join(''); selU.value=cur; if(selU.value!==cur && cur) { const o=document.createElement('option'); o.value=cur; o.textContent=cur+' (missing)'; selU.appendChild(o); selU.value=cur; } } ['selLora1','selLora2','selLora3'].forEach(function(id){ const el=document.getElementById(id); if(!el) return; const curKey=id==='selLora1'?'lora1':id==='selLora2'?'lora2':'lora3'; const cur=state[curKey]||'off'; el.innerHTML='<option value="off">off</option>'+hdrMeta.loras.map(function(n){ return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>'; }).join(''); el.value=cur; if(el.value!==cur){ const o=document.createElement('option'); o.value=cur; o.textContent=cur+' (missing)'; el.appendChild(o); el.value=cur; }}); syncLoraWtDisabled(); }
 function parseHash(){ const ps=new URLSearchParams(location.hash.slice(1)); state.date=ps.get('date')||''; state.job=ps.get('job')||''; state.item=ps.get('item')||''; state.scene=ps.get('scene')||''; state.variant=ps.get('variant')||''; }
 function pushHash(){ const ps=new URLSearchParams(); if(state.date) ps.set('date',state.date); if(state.job) ps.set('job',state.job); if(state.item) ps.set('item',state.item); if(state.scene) ps.set('scene',state.scene); if(state.variant) ps.set('variant',state.variant); const s=ps.toString(); history.replaceState(null,'', s?'#'+s:location.pathname); }
 function setLive(ok){ const el=$('#livePill'); if(!el) return; el.textContent= ok?'● LIVE':'○ OFFLINE'; el.className='pill '+(ok?'live':'warn'); }
@@ -95,6 +104,45 @@ function updateDelBtn(){
   const hasJob=!!(state.date && state.job);
   btn.disabled=!hasJob;
   btn.title=hasJob ? '删除当前包: '+state.date+'/'+state.job+'（含 jobs 定义与 output 图片，不可撤销）' : '先在左侧导航选中一个包';
+}
+function updateRerunBtn(){
+  const btn=document.getElementById('btnRerunGroup');
+  if(!btn) return;
+  const hasGroup=!!(state.date && state.job && state.scene);
+  if(!hasGroup){ btn.style.display='none'; btn.disabled=true; btn.title='在中栏 Scenes 选择一个分组后可用，将重跑该分组已跑过的图片'; return; }
+  btn.style.display='';
+  // check if any done/failed in that group to rerun
+  const items=(state.curJob && state.curJob.items)||[];
+  let count=0;
+  for(const it of items){
+    if(it.group!==undefined || it.scene!==undefined){
+      const g=(it.group||it.scene||'__default__')||'__default__';
+      if(g!==state.scene) continue;
+      if(state.variant){
+        const sg=(it.subgroup||it.variant||'')||'';
+        // use subgroupKey logic: if variant set, match subgroupKey
+        if(sg!==state.variant) continue;
+      }
+      count++;
+    } else {
+      if(items.length===1) count++;
+    }
+  }
+  // fallback: if count computed 0, try via current filtered group match
+  if(count===0 && state.scene){
+    const scenes=(state.curJob && state.curJob._scenes)||[];
+    const sc=scenes.find(s=>s.scene===state.scene);
+    if(sc){
+      if(state.variant && sc.variants[state.variant]) count=sc.variants[state.variant];
+      else if(!state.variant) count=sc.count;
+    }
+  }
+  btn.disabled = count===0;
+  const label = state.variant ? `${state.scene}/${state.variant}` : state.scene;
+  const disp = label==='__default__'?'未分组':label;
+  btn.title=`重运行分组 [${disp}] 内 ${count} 张（覆盖已有图，需二次确认）`;
+  // show count in text
+  btn.textContent='↻ 重运行 '+disp;
 }
 async function loadJob(date,job){
   try{
@@ -191,6 +239,7 @@ function renderScenes(){
   allEl.querySelector('[data-scene-all]').onclick=()=>{ state.scene=''; state.variant=''; pushHash(); renderScenes(); renderGallery(); };
   ul.appendChild(allEl);
 
+  updateRerunBtn();
   for(const g of scenes){
     const active=state.scene===g.scene;
     const collapsed=sceneCollapsed.has(g.scene) && !active;
@@ -438,7 +487,7 @@ function startPolling(){
       applyIncrementalUpdate(prev, j);
       updateKpi(); renderTree();
       const stillPending=j.items.some(x=> x.status==='pending'||x.status==='queued');
-      if(!stillPending){ clearInterval(pollTimer); pollTimer=null; $('#status').textContent='完成'; setTimeout(()=> $('#status').textContent='', 3000); }
+      if(!stillPending){ clearInterval(pollTimer); pollTimer=null; $('#status').textContent='完成'; updateRerunBtn(); setTimeout(()=> $('#status').textContent='', 3000); }
     }catch(e){ console.error(e); }
   }, 1500);
 }
@@ -783,6 +832,8 @@ document.getElementById('btnDelJob').addEventListener('click', async()=>{
     state.job=''; state.scene=''; state.variant=''; state.curJob=null;
     selectedIds.clear(); clearGallery();
     await loadDates();
+fetchHdrMeta().then(function(){ applyHdrToDOM(); });
+applyHdrToDOM();
     pushHash(); renderTree(); renderScenes(); updateDelBtn();
   }catch(err){ alert('删除失败: '+(err&&err.message||err)); }
   finally{ if(btn){ btn.disabled=!state.date||!state.job; btn.textContent=prev||'🗑 删除包'; } }
@@ -805,7 +856,8 @@ $('#btnRun').addEventListener('click', async()=>{
   const btn=$('#btnRun'); btn.disabled=true; const prev=btn.textContent; btn.textContent='运行中…';
   $('#status').textContent='已触发，后台串行生成中…';
   try{
-    const res=await fetch('/api/run?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job),{method:'POST'});
+    const hdr=buildHdrPayload();
+    const res=await fetch('/api/run?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job),{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(hdr)});
     if(res.status===409){ alert('该批次已在运行中'); return; }
     if(!res.ok) throw new Error(await res.text());
     startPolling();
@@ -823,6 +875,31 @@ $('#btnKill').addEventListener('click', async()=>{
   if(!confirm('释放端口并清理 anima 幽灵进程？（kill :8765 + anima.exe）')) return;
   alert('请在终端执行: anima kill  或  anima kill --port 8765');
 });
+$('#btnRerunGroup').addEventListener('click', async()=>{
+  if(!state.date||!state.job){ alert('先选择左侧树中的批次包'); return; }
+  if(!state.scene){ alert('在中栏 Scenes 选择一个分组后可用'); return; }
+  const label = state.variant ? `${state.scene}/${state.variant}` : state.scene;
+  if(!confirm(`重运行分组 [${label}] 将覆盖该分组已有图片并重新生成，是否继续？`)) return;
+  const btn=$('#btnRerunGroup'); btn.disabled=true; const prev=btn.textContent; btn.textContent='重运行中…';
+  $('#status').textContent='重运行已触发，替换生成中…';
+  try{
+    const hdr=buildHdrPayload();
+    // merge group filter into payload
+    hdr.group=state.scene; if(state.variant) hdr.subgroup=state.variant;
+    hdr.force=true;
+    const res=await fetch('/api/run?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job),{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(hdr)});
+    if(res.status===409){ alert('该批次已在运行中（全批或该分组）'); return; }
+    if(!res.ok) throw new Error(await res.text());
+    startPolling();
+    let tries=0;
+    const timer=setInterval(async()=>{
+      tries++;
+      const pending=state.curJob? state.curJob.items.filter(x=> x.status==='pending'||x.status==='queued').length : 0;
+      $('#status').textContent= pending? `重运行中… 剩余 ${pending}` : '重运行完成';
+      if(pending===0 || tries>120){ clearInterval(timer); btn.disabled=false; btn.textContent=prev; updateRerunBtn(); setTimeout(()=> $('#status').textContent='', 3000); }
+    }, 2000);
+  }catch(e){ alert('重运行失败: '+e.message); btn.disabled=false; btn.textContent=prev; updateRerunBtn(); }
+});
 $('#btnQuit').addEventListener('click', async()=>{
   if(!confirm('Quit 将关闭网页并停止后端服务，确定？')) return;
   try{ await fetch('/api/quit',{method:'POST'}); }catch(e){}
@@ -831,9 +908,33 @@ $('#btnQuit').addEventListener('click', async()=>{
   setTimeout(()=>{ window.close(); setTimeout(()=>{ document.body.innerHTML='<div style="display:grid;place-items:center;height:100vh;background:#0F172A;color:#94A3B8;font:14px Inter;text-align:center"><div><h2>Anima 已退出</h2><p>后端服务已停止，可关闭此标签页。</p></div></div>'; }, 300); }, 400);
 });
 
+// Header presets bindings
+(function bindHdr(){
+  const bind=(id, key, isNum)=>{
+    const el=document.getElementById(id); if(!el) return;
+    const ev=(el.tagName==='SELECT'?'change':'input');
+    el.addEventListener(ev, ()=>{
+      state[key]= isNum ? parseFloat(el.value) : el.value;
+      if(id.indexOf('selLora')===0) syncLoraWtDisabled();
+      saveHdr();
+    });
+  };
+  bind('selPreset','preset',false);
+  bind('selUnet','unet',false);
+  bind('selLora1','lora1',false);
+  bind('selLora2','lora2',false);
+  bind('selLora3','lora3',false);
+  bind('wtLora1','wt1',true);
+  bind('wtLora2','wt2',true);
+  bind('wtLora3','wt3',true);
+})();
+
 // Init
+loadHdr();
 parseHash();
 applyTreeCollapsed();
 updateDelBtn();
 window.addEventListener('hashchange', ()=>{ parseHash(); renderTree(); renderScenes(); renderGallery(); updateDelBtn(); if(state.date&&state.job) loadJob(state.date, state.job); if(state.item) openDrawer(state.item); });
 loadDates();
+fetchHdrMeta().then(function(){ applyHdrToDOM(); });
+applyHdrToDOM();

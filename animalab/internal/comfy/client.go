@@ -81,17 +81,25 @@ func exeDir() string {
 	return filepath.Dir(exe)
 }
 
+type LoraReq struct {
+	Name   string  `json:"name"`
+	Weight float64 `json:"weight"`
+}
+
 type SubmitReq struct {
-	Width     int     `json:"width"`
-	Height    int     `json:"height"`
-	Steps     int     `json:"steps"`
-	Seed      int64   `json:"seed"`
-	Positive  string  `json:"positive"`
-	Negative  string  `json:"negative"`
-	Sampler   string  `json:"sampler"`
-	Scheduler string  `json:"scheduler"`
-	Cfg       float64 `json:"cfg"`
-	Prefix    string  `json:"prefix"`
+	Width     int       `json:"width"`
+	Height    int       `json:"height"`
+	Steps     int       `json:"steps"`
+	Seed      int64     `json:"seed"`
+	Positive  string    `json:"positive"`
+	Negative  string    `json:"negative"`
+	Sampler   string    `json:"sampler"`
+	Scheduler string    `json:"scheduler"`
+	Cfg       float64   `json:"cfg"`
+	Prefix    string    `json:"prefix"`
+	Preset    string    `json:"preset,omitempty"`
+	UnetName  string    `json:"unet_name,omitempty"`
+	Loras     []LoraReq `json:"loras,omitempty"`
 }
 
 type SubmitResult struct {
@@ -119,9 +127,31 @@ func newUUID() string {
 
 func (c *Client) Submit(ctx context.Context, req SubmitReq) (SubmitResult, error) {
 	start := time.Now()
-	tplBytes, err := os.ReadFile(c.TemplatePath)
+	// preset-aware template: pick base vs turbo file if preset provided; else use c.TemplatePath
+	templatePath := c.TemplatePath
+	if req.Preset != "" {
+		candidate := ""
+		if req.Preset == "base" {
+			candidate = "Anima_base_api.json"
+		} else {
+			candidate = "Anime_Turbo_api.json"
+		}
+		// try same dir as current template, then exe dir, then cwd
+		dir := filepath.Dir(c.TemplatePath)
+		for _, cand := range []string{
+			filepath.Join(dir, candidate),
+			filepath.Join(exeDir(), candidate),
+			candidate,
+		} {
+			if _, err2 := os.Stat(cand); err2 == nil {
+				templatePath = cand
+				break
+			}
+		}
+	}
+	tplBytes, err := os.ReadFile(templatePath)
 	if err != nil {
-		return SubmitResult{}, fmt.Errorf("read template %s: %w", c.TemplatePath, err)
+		return SubmitResult{}, fmt.Errorf("read template %s: %w", templatePath, err)
 	}
 	var tpl map[string]any
 	if err := json.Unmarshal(tplBytes, &tpl); err != nil {
@@ -143,6 +173,55 @@ func (c *Client) Submit(ctx context.Context, req SubmitReq) (SubmitResult, error
 	if node, ok := tpl["46"].(map[string]any); ok {
 		if inputs, ok := node["inputs"].(map[string]any); ok {
 			inputs["filename_prefix"] = req.Prefix
+		}
+	}
+	// Unet override (header global)
+	if strings.TrimSpace(req.UnetName) != "" {
+		if node, ok := tpl["60:44"].(map[string]any); ok {
+			if inputs, ok := node["inputs"].(map[string]any); ok {
+				inputs["unet_name"] = strings.TrimSpace(req.UnetName)
+			}
+		}
+	}
+	// Lora chain — inject up to 3 LoraLoaderModelOnly nodes dynamically
+	activeLoras := []LoraReq{}
+	for _, l := range req.Loras {
+		n := strings.TrimSpace(l.Name)
+		if n == "" || strings.EqualFold(n, "off") {
+			continue
+		}
+		w := l.Weight
+		if w == 0 {
+			w = 1.0
+		}
+		activeLoras = append(activeLoras, LoraReq{Name: n, Weight: w})
+		if len(activeLoras) >= 3 {
+			break
+		}
+	}
+	if len(activeLoras) > 0 {
+		// collect existing lora chain root: current KSampler model source
+		prevOutput := "60:44"
+		if len(activeLoras) > 0 {
+			for i, lr := range activeLoras {
+				nodeID := fmt.Sprintf("60:6%d", i+1)
+				tpl[nodeID] = map[string]any{
+					"inputs": map[string]any{
+						"model":          []any{prevOutput, 0},
+						"lora_name":       lr.Name,
+						"strength_model":  lr.Weight,
+					},
+					"class_type": "LoraLoaderModelOnly",
+					"_meta": map[string]any{"title": fmt.Sprintf("Lora %d", i+1)},
+				}
+				prevOutput = nodeID
+			}
+		}
+		// rewire KSampler model input to last lora node
+		if ksampler, ok := tpl["60:19"].(map[string]any); ok {
+			if inputs, ok := ksampler["inputs"].(map[string]any); ok {
+				inputs["model"] = []any{prevOutput, 0}
+			}
 		}
 	}
 
@@ -182,7 +261,7 @@ func (c *Client) Submit(ctx context.Context, req SubmitReq) (SubmitResult, error
 	}
 	pid := pr.PromptID
 
-	deadline := time.Now().Add(120 * time.Second)
+	deadline := time.Now().Add(180 * time.Second)
 	var lastHistory map[string]map[string]any
 	for time.Now().Before(deadline) {
 		select {

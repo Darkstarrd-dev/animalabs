@@ -25,6 +25,29 @@ var GlobalWorkflowDefaults = WorkflowDefaults{
 	Cfg:       1.0,
 }
 
+// Preset names — header selector. turbo = Anime_Turbo_api.json, base = Anima_base_api.json (converted from Anima_good UI workflow: base UNET + turbo-lora chain).
+const (
+	PresetTurbo = "turbo"
+	PresetBase  = "base"
+)
+
+var ValidPresets = map[string]bool{PresetTurbo: true, PresetBase: true}
+
+func PresetFile(preset string) string {
+	switch preset {
+	case PresetBase:
+		return "Anima_base_api.json"
+	default:
+		return "Anime_Turbo_api.json"
+	}
+}
+
+// LoraSlot mirrors header lora1-3 (off = disabled). Weight only meaningful when Name != "off" && Name != "".
+type LoraSlot struct {
+	Name   string  `json:"name"`
+	Weight float64 `json:"weight"`
+}
+
 var GlobalDefaults = struct {
 	Width          int
 	Height         int
@@ -48,14 +71,17 @@ type Job struct {
 }
 
 type Defaults struct {
-	Width          *int     `json:"width,omitempty"`
-	Height         *int     `json:"height,omitempty"`
-	Steps          *int     `json:"steps,omitempty"`
-	Seed           *int64   `json:"seed,omitempty"`
-	NegativePrompt *string  `json:"negative_prompt,omitempty"`
-	Sampler        *string  `json:"sampler,omitempty"`
-	Scheduler      *string  `json:"scheduler,omitempty"`
-	Cfg            *float64 `json:"cfg,omitempty"`
+	Width          *int       `json:"width,omitempty"`
+	Height         *int       `json:"height,omitempty"`
+	Steps          *int       `json:"steps,omitempty"`
+	Seed           *int64     `json:"seed,omitempty"`
+	NegativePrompt *string    `json:"negative_prompt,omitempty"`
+	Sampler        *string    `json:"sampler,omitempty"`
+	Scheduler      *string    `json:"scheduler,omitempty"`
+	Cfg            *float64   `json:"cfg,omitempty"`
+	Preset         *string    `json:"preset,omitempty"`
+	UnetName       *string    `json:"unet_name,omitempty"`
+	Loras          []LoraSlot `json:"loras,omitempty"`
 }
 
 type Item struct {
@@ -66,20 +92,23 @@ type Item struct {
 	Subgroup       string            `json:"subgroup,omitempty"`
 	GroupBy        []string          `json:"group_by,omitempty"`
 	Tags           map[string]string `json:"tags,omitempty"`
-	Width          *int     `json:"width,omitempty"`
-	Height         *int     `json:"height,omitempty"`
-	Steps          *int     `json:"steps,omitempty"`
-	Seed           *int64   `json:"seed,omitempty"`
-	PositivePrompt string   `json:"positive_prompt"`
-	NegativePrompt *string  `json:"negative_prompt,omitempty"`
-	Sampler        *string  `json:"sampler,omitempty"`
-	Scheduler      *string  `json:"scheduler,omitempty"`
-	Cfg            *float64 `json:"cfg,omitempty"`
-	Status         string   `json:"status"` // pending|queued|done|failed
-	Output         *Output  `json:"output,omitempty"`
-	Review         *Review  `json:"review,omitempty"`
-	Error          string   `json:"error,omitempty"`
-	Warnings       []string `json:"warnings,omitempty"`
+	Width          *int      `json:"width,omitempty"`
+	Height         *int      `json:"height,omitempty"`
+	Steps          *int      `json:"steps,omitempty"`
+	Seed           *int64    `json:"seed,omitempty"`
+	PositivePrompt string    `json:"positive_prompt"`
+	NegativePrompt *string   `json:"negative_prompt,omitempty"`
+	Sampler        *string   `json:"sampler,omitempty"`
+	Scheduler      *string   `json:"scheduler,omitempty"`
+	Cfg            *float64  `json:"cfg,omitempty"`
+	Preset         *string   `json:"preset,omitempty"`
+	UnetName       *string   `json:"unet_name,omitempty"`
+	Loras          []LoraSlot `json:"loras,omitempty"`
+	Status         string    `json:"status"`
+	Output         *Output   `json:"output,omitempty"`
+	Review         *Review   `json:"review,omitempty"`
+	Error          string    `json:"error,omitempty"`
+	Warnings       []string  `json:"warnings,omitempty"`
 }
 
 type Output struct {
@@ -101,19 +130,22 @@ type Review struct {
 	ReviewedAt string   `json:"reviewed_at"`
 }
 
-// ResolvedItem is the merged 9-dim view for execution
+// Resolved is the merged dim+preset+lora view for execution
 type Resolved struct {
-	ID             string `json:"id"`
-	Width          int    `json:"width"`
-	Height         int    `json:"height"`
-	Steps          int    `json:"steps"`
-	Seed           int64  `json:"seed"`
-	PositivePrompt string `json:"positive_prompt"`
-	NegativePrompt string `json:"negative_prompt"`
-	Sampler        string `json:"sampler"`
-	Scheduler      string `json:"scheduler"`
-	Cfg            float64 `json:"cfg"`
-	Warnings       []string `json:"warnings,omitempty"`
+	ID             string     `json:"id"`
+	Width          int        `json:"width"`
+	Height         int        `json:"height"`
+	Steps          int        `json:"steps"`
+	Seed           int64      `json:"seed"`
+	PositivePrompt string     `json:"positive_prompt"`
+	NegativePrompt string     `json:"negative_prompt"`
+	Sampler        string     `json:"sampler"`
+	Scheduler      string     `json:"scheduler"`
+	Cfg            float64    `json:"cfg"`
+	Preset         string     `json:"preset"`
+	UnetName       string     `json:"unet_name"`
+	Loras          []LoraSlot `json:"loras,omitempty"`
+	Warnings       []string   `json:"warnings,omitempty"`
 }
 
 // Load reads a job file.
@@ -250,6 +282,52 @@ func (j *Job) Resolve(idx int) Resolved {
 	if it.Cfg != nil {
 		cfg = *it.Cfg
 	}
+	preset := PresetTurbo
+	if j.Defaults.Preset != nil && ValidPresets[*j.Defaults.Preset] {
+		preset = *j.Defaults.Preset
+	}
+	if it.Preset != nil && ValidPresets[*it.Preset] {
+		preset = *it.Preset
+	}
+	presetDefaultUnet := "anima_turboV10.safetensors"
+	if preset == PresetBase {
+		presetDefaultUnet = "fnMixAnimaTurbo_baseNoTurbo.safetensors"
+	}
+	unetName := presetDefaultUnet
+	if j.Defaults.UnetName != nil && strings.TrimSpace(*j.Defaults.UnetName) != "" {
+		unetName = strings.TrimSpace(*j.Defaults.UnetName)
+	}
+	if it.UnetName != nil && strings.TrimSpace(*it.UnetName) != "" {
+		unetName = strings.TrimSpace(*it.UnetName)
+	}
+	loras := []LoraSlot{}
+	if len(j.Defaults.Loras) > 0 {
+		loras = j.Defaults.Loras
+	}
+	if len(it.Loras) > 0 {
+		loras = it.Loras
+	}
+	activeLoras := []LoraSlot{}
+	for _, l := range loras {
+		name := strings.TrimSpace(l.Name)
+		if name == "" || strings.EqualFold(name, "off") {
+			continue
+		}
+		w := l.Weight
+		if w == 0 {
+			w = 1.0
+		}
+		if w < -10 {
+			w = -10
+		}
+		if w > 10 {
+			w = 10
+		}
+		activeLoras = append(activeLoras, LoraSlot{Name: name, Weight: w})
+		if len(activeLoras) >= 3 {
+			break
+		}
+	}
 
 	// width/height align to 8
 	origW, origH := width, height
@@ -297,6 +375,9 @@ func (j *Job) Resolve(idx int) Resolved {
 		Sampler:        sampler,
 		Scheduler:      scheduler,
 		Cfg:            cfg,
+		Preset:         preset,
+		UnetName:       unetName,
+		Loras:          activeLoras,
 		Warnings:       warnings,
 	}
 }

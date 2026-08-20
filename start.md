@@ -1,9 +1,10 @@
-# Anima — Anime_Turbo 文生图入口文档
+# Anima — 文生图入口文档
 
-> **用途**：本文件是 `Anima` 目录下 Anime_Turbo 文生图模型 API 控制的唯一入口，可在任意电脑独立使用。
-> **模型**：`anima_turboV10.safetensors` (UNET) + `qwen_3_06b_base.safetensors` (CLIP) + `qwen_image_vae.safetensors` (VAE)
-> **验证**：ComfyUI 0.33.1 / Python 3.13 / RTX 5090D / `127.0.0.1:8188` 实测通过（2026-08-13）。
-> **控制维度**：仅 6 维 — `width / height / steps / seed / positive_prompt / negative_prompt`。
+> **用途**：本文件是 `Anima` 目录下 Anima 文生图模型 API 控制的唯一入口，可在任意电脑独立使用。
+> **预设**：`turbo`（`Anime_Turbo_api.json`，`anima_turboV10.safetensors` UNET，默认）与 `base`（`Anima_base_api.json`，由 `anima_good` UI workflow 转换：`anima-preview3-base.safetensors` UNET + 可选 `anima-turbo-lora-v0.2` LoRA 链）。
+> **CLIP/VAE 共用**：`qwen_3_06b_base.safetensors` (CLIP) + `qwen_image_vae.safetensors` (VAE)
+> **验证**：ComfyUI 0.33.0 / Python 3.13.12 / RTX 5090D / `127.0.0.1:8188` 实测通过（2026-08-13）。
+> **控制维度**：9 维 — `width / height / steps / seed / positive_prompt / negative_prompt / sampler / scheduler / cfg` + 全局 `preset / unet / lora1-3`（Header 控件）。
 
 ---
 
@@ -13,8 +14,9 @@
 Anima/                          # 根（入口 + 运行时）
   start.md                      # 本文件（入口文档）
   anima.exe                     # Go 后端可执行文件（animalab/build.* 构筑）
-  Anime_Turbo_api.json          # API 格式工作流模板（9 节点，版本化）
-  anime_submit.py               # 最小可复用提交器（仅标准库）
+  Anime_Turbo_api.json          # 预设 turbo：API 格式工作流模板（9 节点，anima_turboV10）
+  Anima_base_api.json           # 预设 base：API 格式工作流模板（由 anima_good 转换，anima-preview3-base）
+  anime_submit.py               # 最小可复用提交器（仅标准库，仅 turbo）
   jobs/<date>/<job>.json        # 批量任务（输入+结果同文件，exe 运行时目录）
   output/<date>/<job>/          # PNG 落盘（exe 运行时目录）
   build.ps1 / build.bat         # 构筑入口（转发至 animalab/build.*）
@@ -46,12 +48,12 @@ curl -s http://127.0.0.1:8188/models/diffusion_models  # 需包含 anima_turboV1
 
 ---
 
-## 2. 工作流（`Anime_Turbo_api.json`）
+## 2. 工作流（双预设 API 模板）
 
-UI 结构已折叠为 API 格式 `{ node_id: { class_type, inputs, _meta } }`，共 9 节点：
+两个预设均为 API 格式 `{ node_id: { class_type, inputs, _meta } }`，共 9 节点（结构一致，仅 `60:44 UNETLoader.unet_name` 不同）：
 
 ```
-60:44 UNETLoader      anima_turboV10.safetensors
+60:44 UNETLoader      turbo: anima_turboV10.safetensors [默认] | base: anima-preview3-base.safetensors
 60:45 CLIPLoader       qwen_3_06b_base.safetensors
 60:15 VAELoader        qwen_image_vae.safetensors
 60:11 CLIPTextEncode   positive_prompt  ─┐
@@ -59,8 +61,7 @@ UI 结构已折叠为 API 格式 `{ node_id: { class_type, inputs, _meta } }`，
 60:28 EmptyLatentImage width/height      ─┼─> 60:19 KSampler (er_sde/simple, cfg=1.0) -> 60:8 VAEDecode -> 46 SaveImage
 ```
 
-固定项无需控制：`KSampler.cfg=1.0, sampler_name=er_sde, scheduler=simple, denoise=1.0`。
-`SaveImage.filename_prefix` 仅控制落盘前缀（默认 `Anima`）。
+`base` 预设可选叠加 `anima-turbo-lora-v0.2` LoRA（强度默认 0.8，见 §7 Header 的 `lora` 控件；运行时由后端动态插入 `60:61/60:62/60:63 LoraLoaderModelOnly` 链到 `60:19.model`）。固定项无需控制：`KSampler.cfg=1.0, sampler_name=er_sde, scheduler=simple, denoise=1.0`。`SaveImage.filename_prefix` 仅控制落盘前缀（默认 `Anima`）。
 
 ### 6 维映射（稳定 Node ID，直改 `inputs`）
 
@@ -122,6 +123,13 @@ def submit(width, height, steps, seed, pos, neg, prefix="Anima"):
 
 核心路由：`POST /prompt`、`GET /history/{prompt_id}`、`GET /view?filename=&subfolder=&type=output`、`GET /queue`（可选）。
 
+Anima 服务自身路由（`http://127.0.0.1:8765`）：
+
+- `GET /api/presets` → `{presets:[{id,turbo|base, file}]}`
+- `GET /api/meta` → `{unets:[...], loras:[...]}`（代理 ComfyUI `UNETLoader / LoraLoader*` 可选值，Header 下拉数据源）
+- `POST /api/run?date=&job=`（body 可选 `{preset, unet_name, loras:[...]}` 作为本次运行全局覆盖）
+- `GET /api/job?date=&job=`、`POST /api/review`、`POST /api/delete`、`GET /api/export?date=`、`GET /api/legacy`、`POST /api/quit`
+
 ---
 
 ## 4. 用法
@@ -172,7 +180,7 @@ ComfyUI 单队列串行执行，无需并发。
 
 ## 7. 批量与审核（Anima Batch Gallery）
 
-> 新增 3 维可选：`sampler / scheduler / cfg`。未填时回落到 `Anime_Turbo_api.json:60:19 KSampler` 当前值 `er_sde / simple / 1.0`；回落优先级 `item > job.defaults > workflowDefaults > 全局默认`。
+> 9 维可选（`sampler / scheduler / cfg` 等）外加全局 3 项（`preset / unet_name / loras`）由 Header 控件驱动（见下「Header 预设与模型」）。未填的 3 维回落到 `Anime_Turbo_api.json:60:19 KSampler` 当前值 `er_sde / simple / 1.0`；回落优先级 `item > job.defaults > workflowDefaults > 全局默认`；`preset/unet/lora` 回落同理 `item > job.defaults > 预设默认`。
 
 ### 目录契约
 ```
@@ -203,7 +211,20 @@ Anima/                          # 根（入口 + 运行时，exe 双击即用）
 ```
 新增 `scene`/`variant` 可选：`scene` 为场景分组（如 `forest/city`），`variant` 为该场景下的比例或变体名（如 `4:3/16:9/1:1`）；未填归“未分组”，前端按场景聚合、按比例展开。旧 job 缺省兼容，无需迁移。
 
-校验：`width/height` 16–16384 且 8 倍数（非倍数向上对齐并记 `warnings`），`steps` 1–32（4–8 推荐，越界仅 warning），`cfg` 0–20，`positive_prompt` 非空，`id` 唯一；失败项标 `failed` 不阻断同批。
+预设与模型同样可在 `defaults`/`item` 声明（`preset: "turbo"|"base"`、`unet_name: "*.safetensors"`、`loras: [{name, weight}]`，`name` 为 `off`/空则跳过，`weight` 未填按 `1.0`，`±10` clamp，最多 3 条）。Header 控件作为**本次运行**的全局覆盖注入（仅内存态写入 `job.Defaults`，不落盘）；优先级仍 `item > defaults > Header > 预设默认`。
+
+### Header 预设与模型（新增）
+
+`http://127.0.0.1:8765/` 顶部（`brand` 与 `▶运行批次` 之间）新增一排控件：
+
+- **预设**（`selPreset`）：`turbo`（默认）/ `base`，决定读取 `Anime_Turbo_api.json` 或 `Anima_base_api.json` 作为模板。
+- **UNET**（`selUnet`）：所有 `anima*.safetensors`（来自 `GET /api/meta`）；默认空 = 跟随预设的 unet。
+- **Lora 1/2/3**（`selLora1-3` + 权重 `wtLora1-3`）：默认 `off`（禁权重输入），选中 `anima-turbo-lora-v0.2.safetensors` 等即生效、权重 `step 0.05 [-10,10]`（默认 0.8/1.0/1.0）。
+- 全部持久化 `localStorage anima.hdr.*`，重开页面恢复。
+- 点击 `▶运行批次` 时随 `POST /api/run` body 上传 `{preset, unet_name, loras}`。
+
+对应 `dry-run` / CLI / REST 见下方。
+
 ### 构筑
 
 ```powershell
@@ -226,9 +247,12 @@ powershell -ExecutionPolicy Bypass -File animalab/build.ps1
 ./anima.exe --no-open
 ./anima.exe serve --no-open
 
-# 预览 / 批量
+# 预览 / 批量（新增 Header 等价 CLI：--preset / --unet / --loras）
 ./anima.exe run jobs/2026-08-20/example.json --dry-run
 ./anima.exe run jobs/2026-08-20/example.json
+./anima.exe run jobs/2026-08-20/example.json --dry-run --preset base
+./anima.exe run jobs/2026-08-20/example.json --dry-run --preset base --unet anima_turboV10.safetensors
+./anima.exe run jobs/2026-08-20/example.json --dry-run --loras '[{"name":"anima-turbo-lora-v0.2.safetensors","weight":0.8}]'
 
 # 服务显式
 ./anima.exe serve                          # + 自动弹浏览器
@@ -238,6 +262,8 @@ ANIMA_PORT=8765 COMFY_HOST=http://127.0.0.1:8188 ./anima.exe
 ./anima.exe kill                             # 杀掉本机所有 anima 进程 + 释放 8765
 ./anima.exe kill --port 8765                 # 仅清理指定端口
 ```
+
+`--preset base` 读取 `Anima_base_api.json`（默认 `--preset turbo` 读 `Anime_Turbo_api.json`）；`--unet` 覆盖 `60:44.unet_name`；`--loras` 接收 JSON 数组（最多 3 条，`off`/空跳过，weight 默认 1.0），等价 Header 控件。`dry-run` 会打印每项 `preset / unet / loras`。
 
 `kill` 在 Windows 通过 `netstat -ano` 定位 `:8765 LISTENING` 且 `tasklist` 确认为 `anima` 的 PID 后 `taskkill /F`，再扫 `anima.exe` 映像兜底；Unix 走 `lsof -ti :port`/`fuser`+`pgrep -f anima`。均排除自身 PID，不会自杀；未命中则提示 `no anima tasks found`。
 
@@ -253,7 +279,7 @@ go run ./cmd/anima run ../jobs/2026-08-20/example.json --dry-run
 
 ### AI 闭环
 
-`AI 生成 jobs/<date>/<job>.json → POST /api/run 或 anima run 批量验证 → 人工在画廊标注 rejected+reason/tags → GET /api/export?date= 聚合（stats/tags频次/失败原因）→ 作为下一轮 jobs 生成依据`。示例见 `jobs/2026-08-20/example.json`（含 width 对齐用例）、`jobs/2026-08-20/turbo-compare.json`（sampler/scheduler/cfg 对比）与 `jobs/2026-08-20/scene-demo.json`（任意 `group/subgroup` 分组演示，兼容旧 `scene/variant`）。
+`AI 生成 jobs/<date>/<job>.json → POST /api/run 或 anima run 批量验证 → 人工在画廊标注 rejected+reason/tags → GET /api/export?date= 聚合（stats/tags频次/失败原因）→ 作为下一轮 jobs 生成依据`。示例见 `jobs/2026-08-20/example.json`（含 width 对齐用例）、`jobs/2026-08-20/turbo-compare.json`（sampler/scheduler/cfg 对比）与 `jobs/2026-08-20/scene-demo.json`（任意 `group/subgroup` 分组演示，兼容旧 `scene/variant`）；新增 `jobs/2026-08-20/high-overhead-behind.json`（高过头顶正后俯视 24项，`frieren/fern` × `head/bust/half/full` × `高俯30°/斜顶45°/顶俯60°`，`fern-bust` 已就地 patch 防胸部翻面）。
 
 ## 8. Prompt 指南与参考（可增长）
 
@@ -292,4 +318,5 @@ standing, full body, looking at viewer, forest, sunlight, soft lighting
 - **筛选/批量**：`全部/未审核/已保留/已驳回/失败` + `tags` 过滤 + `按ID/状态/Seed` 排序 + `批量保留/驳回`；计数 `可见/总数 · job · date · scene`。
 - **生成回调**：`▶运行批次` 后轮询 `GET /api/job` 增量 diff 仅追加新 thumbnail（绿色闪边），无需刷新。
 - **灯箱全屏**：`‹/›` 左右切同筛选列表，到边界自动跨场景；`↑/↓` 切上一/下一场景（`▲场景/▼场景` 按钮同效）；右侧嵌入完整“抽屉内容”（9维+审核表单+保存/删除），剩余空间图片 `contain 88vh` 自适应；`Esc` 关闭。
+- **预设与模型（新增，Header）**：`预设 turbo/base`、`UNET`（空=跟随预设）、`Lora 1/2/3`（默认 off + 权重输入）；`▶运行批次` 一并上传该全局配置（详见 §7「Header 预设与模型」），`localStorage anima.hdr.*` 持久化。
 - **后退/分享**：`#date=&job=&scene=&variant=&item=` 可分享，`file://` 直接打开提示启动后端；`header Quit(红)` = `POST /api/quit` 停服并关页。

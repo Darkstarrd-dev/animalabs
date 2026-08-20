@@ -16,12 +16,38 @@
       <small>Batch Gallery · Admin</small>
     </div>
   </div>
+  <div class="hdr-presets" role="group" aria-label="预设与模型">
+    <label class="hdr-field">预设
+      <select id="selPreset" class="sel">
+        <option value="turbo">turbo</option>
+        <option value="base">base</option>
+      </select>
+    </label>
+    <label class="hdr-field">UNET
+      <select id="selUnet" class="sel"><option value="">(跟随预设)</option></select>
+    </label>
+    <span class="hdr-loras" role="group" aria-label="Lora 1-3">
+      <label class="hdr-field">Lora 1
+        <select id="selLora1" class="sel sel-lora"><option value="off">off</option></select>
+        <input id="wtLora1" class="ipt-wt" type="number" step="0.05" min="-10" max="10" value="0.8" title="权重" disabled>
+      </label>
+      <label class="hdr-field">Lora 2
+        <select id="selLora2" class="sel sel-lora"><option value="off">off</option></select>
+        <input id="wtLora2" class="ipt-wt" type="number" step="0.05" min="-10" max="10" value="1.0" title="权重" disabled>
+      </label>
+      <label class="hdr-field">Lora 3
+        <select id="selLora3" class="sel sel-lora"><option value="off">off</option></select>
+        <input id="wtLora3" class="ipt-wt" type="number" step="0.05" min="-10" max="10" value="1.0" title="权重" disabled>
+      </label>
+    </span>
+  </div>
   <div class="actions" role="toolbar" aria-label="全局操作">
     <span id="livePill" class="pill live" title="服务在线">● LIVE</span>
     <span id="status" class="pill" aria-live="polite"></span>
     <button id="btnKill" class="btn-ghost" title="释放端口/清理幽灵进程">Kill</button>
     <button id="btnDelJob" class="btn-ghost" title="删除当前选中的包（含定义与图片）" aria-label="删除当前包">🗑 删除包</button>
     <button id="btnRun" class="btn" aria-label="运行当前批次">▶ 运行批次</button>
+    <button id="btnRerunGroup" class="btn" aria-label="重运行当前分组" style="display:none" disabled>↻ 重运行</button>
     <button id="btnQuit" class="btn-danger" title="关闭网页并停止后端服务">Quit</button>
   </div>
 </header>

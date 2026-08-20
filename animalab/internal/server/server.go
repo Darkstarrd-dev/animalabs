@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -92,6 +93,8 @@ func (s *Server) routes() {
 	s.Mux.HandleFunc("/api/delete", s.handleDelete)
 	s.Mux.HandleFunc("/api/run", s.handleRun)
 	s.Mux.HandleFunc("/api/export", s.handleExport)
+	s.Mux.HandleFunc("/api/presets", s.handlePresets)
+	s.Mux.HandleFunc("/api/meta", s.handleMeta)
 	s.Mux.HandleFunc("/api/legacy", s.handleLegacy)
 	s.Mux.HandleFunc("/api/quit", s.handleQuit)
 }
@@ -467,21 +470,41 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	date := r.URL.Query().Get("date")
 	jobName := r.URL.Query().Get("job")
 	force := r.URL.Query().Get("force") == "1"
-	if date == "" || jobName == "" {
-		var body struct {
-			Date  string `json:"date"`
-			Job   string `json:"job"`
-			Force bool   `json:"force"`
-		}
-		_ = json.NewDecoder(r.Body).Decode(&body)
+	group := r.URL.Query().Get("group")
+	subgroup := r.URL.Query().Get("subgroup")
+	itemsParam := r.URL.Query().Get("items")
+	// header payload (preset/unet/loras) may come as JSON body; keep for runJob as global override
+	var hdrBody struct {
+		Date     string         `json:"date"`
+		Job      string         `json:"job"`
+		Force    bool           `json:"force"`
+		Preset   string         `json:"preset"`
+		UnetName string         `json:"unet_name"`
+		Loras    []jobs.LoraSlot `json:"loras"`
+		Group    string         `json:"group"`
+		Subgroup string         `json:"subgroup"`
+		Items    []string       `json:"items"`
+	}
+	hdrBytes, _ := io.ReadAll(r.Body)
+	if len(hdrBytes) > 0 {
+		_ = json.Unmarshal(hdrBytes, &hdrBody)
 		if date == "" {
-			date = body.Date
+			date = hdrBody.Date
 		}
 		if jobName == "" {
-			jobName = body.Job
+			jobName = hdrBody.Job
 		}
-		if body.Force {
+		if hdrBody.Force {
 			force = true
+		}
+		if group == "" && hdrBody.Group != "" {
+			group = hdrBody.Group
+		}
+		if subgroup == "" && hdrBody.Subgroup != "" {
+			subgroup = hdrBody.Subgroup
+		}
+		if itemsParam == "" && len(hdrBody.Items) > 0 {
+			itemsParam = strings.Join(hdrBody.Items, ",")
 		}
 	}
 	if date == "" || jobName == "" {
@@ -500,11 +523,23 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	}
 	s.running[key] = true
 	s.runningMu.Unlock()
-	go s.runJob(date, jobName, force)
-	writeJSON(w, 200, map[string]any{"started": true, "date": date, "job": jobName, "force": force})
+	var filterItems []string
+	if itemsParam != "" {
+		for _, s := range strings.Split(itemsParam, ",") {
+			if v := strings.TrimSpace(s); v != "" {
+				filterItems = append(filterItems, v)
+			}
+		}
+	}
+	// when a scene group is targeted, force re-run that group's items even if done
+	if group != "" || subgroup != "" || len(filterItems) > 0 {
+		force = true
+	}
+	go s.runJob(date, jobName, force, hdrBody.Preset, hdrBody.UnetName, hdrBody.Loras, filterItems, group, subgroup)
+	writeJSON(w, 200, map[string]any{"started": true, "date": date, "job": jobName, "force": force, "preset": hdrBody.Preset, "unet_name": hdrBody.UnetName, "loras": hdrBody.Loras})
 }
 
-func (s *Server) runJob(date, jobFile string, force bool) {
+func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet string, hdrLoras []jobs.LoraSlot, filterItems []string, filterGroup, filterSubgroup string) {
 	key := date + "/" + jobFile
 	defer func() {
 		s.runningMu.Lock()
@@ -520,9 +555,39 @@ func (s *Server) runJob(date, jobFile string, force bool) {
 	if err != nil {
 		return
 	}
+	// merge header global override into job defaults (does not persist to disk, only this run)
+	// preset/unet/loras from header act as run-time global defaults, overriding job defaults
+	if hdrPreset != "" && jobs.ValidPresets[hdrPreset] {
+		hdrPresetCopy := hdrPreset
+		j0.Defaults.Preset = &hdrPresetCopy
+	}
+	if hdrUnet != "" {
+		hdrUnetCopy := hdrUnet
+		j0.Defaults.UnetName = &hdrUnetCopy
+	}
+	if hdrLoras != nil {
+		j0.Defaults.Loras = hdrLoras
+	}
 	var indices []int
 	// order to match frontend: grouped display order (see jobs.OrderedIndices)
 	indices = jobs.OrderedIndices(j0, force)
+	if len(filterItems) > 0 || filterGroup != "" {
+		wanted := map[string]bool{}
+		for _, id := range filterItems { wanted[id] = true }
+		filtered := []int{}
+		for _, idx := range indices {
+			it := j0.Items[idx]
+			if len(filterItems) > 0 {
+				if wanted[it.ID] { filtered = append(filtered, idx) }
+				continue
+			}
+			if filterGroup != "" && it.GroupKey() != filterGroup { continue }
+			if filterSubgroup != "" && it.SubgroupKey(j0) != filterSubgroup { continue }
+			filtered = append(filtered, idx)
+		}
+		indices = filtered
+		// if nothing matched but force was implied, still run nothing rather than whole job
+	}
 	for _, idx := range indices {
 		// reload for resolve (handles warnings)
 		s.mu.Lock()
@@ -530,6 +595,18 @@ func (s *Server) runJob(date, jobFile string, force bool) {
 		s.mu.Unlock()
 		if jCheck == nil {
 			continue
+		}
+		// re-apply header globals for resolve
+		if hdrPreset != "" && jobs.ValidPresets[hdrPreset] {
+			hdrPresetCopy2 := hdrPreset
+			jCheck.Defaults.Preset = &hdrPresetCopy2
+		}
+		if hdrUnet != "" {
+			hdrUnetCopy2 := hdrUnet
+			jCheck.Defaults.UnetName = &hdrUnetCopy2
+		}
+		if hdrLoras != nil {
+			jCheck.Defaults.Loras = hdrLoras
 		}
 		resolved := jCheck.Resolve(idx)
 		valErrs := jCheck.Validate()
@@ -557,6 +634,10 @@ func (s *Server) runJob(date, jobFile string, force bool) {
 		s.mu.Unlock()
 
 		prefix := jobName + "_" + resolved.ID
+		loraReqs := []comfy.LoraReq{}
+		for _, lr := range resolved.Loras {
+			loraReqs = append(loraReqs, comfy.LoraReq{Name: lr.Name, Weight: lr.Weight})
+		}
 		req := comfy.SubmitReq{
 			Width:     resolved.Width,
 			Height:    resolved.Height,
@@ -568,8 +649,11 @@ func (s *Server) runJob(date, jobFile string, force bool) {
 			Scheduler: resolved.Scheduler,
 			Cfg:       resolved.Cfg,
 			Prefix:    prefix,
+			Preset:    resolved.Preset,
+			UnetName:  resolved.UnetName,
+			Loras:     loraReqs,
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 130*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 190*time.Second)
 		result, err := s.comfyClient.Submit(ctx, req)
 		cancel()
 		s.mu.Lock()
@@ -756,6 +840,86 @@ func buildExportForJob(j *jobs.Job, date string) map[string]any {
 			"fail_reasons": failReasons,
 		},
 	}
+}
+
+func (s *Server) handlePresets(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+	writeJSON(w, 200, map[string]any{
+		"presets": []map[string]string{
+			{"id": "turbo", "label": "Turbo", "file": "Anime_Turbo_api.json"},
+			{"id": "base", "label": "Base", "file": "Anima_base_api.json"},
+		},
+	})
+}
+
+func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+	// Proxy ComfyUI /object_info to expose available unet/loras without CORS issues
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(s.ComfyHost + "/object_info")
+	if err != nil {
+		writeJSON(w, 200, map[string]any{"unets": []string{}, "loras": []string{}, "error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	var info map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		writeJSON(w, 200, map[string]any{"unets": []string{}, "loras": []string{}, "error": err.Error()})
+		return
+	}
+	unets := []string{}
+	loras := []string{}
+	if unetNode, ok := info["UNETLoader"].(map[string]any); ok {
+		if inp, ok := unetNode["input"].(map[string]any); ok {
+			if req, ok := inp["required"].(map[string]any); ok {
+				if names, ok := req["unet_name"].([]any); ok && len(names) > 0 {
+					if list, ok := names[0].([]any); ok {
+						for _, v := range list {
+							if s, ok := v.(string); ok {
+								unets = append(unets, s)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	for _, key := range []string{"LoraLoaderModelOnly", "LoraLoader"} {
+		if node, ok := info[key].(map[string]any); ok {
+			if inp, ok := node["input"].(map[string]any); ok {
+				if req, ok := inp["required"].(map[string]any); ok {
+					if names, ok := req["lora_name"].([]any); ok && len(names) > 0 {
+						if list, ok := names[0].([]any); ok {
+							for _, v := range list {
+								if s, ok := v.(string); ok {
+									loras = append(loras, s)
+								}
+							}
+						}
+					}
+				}
+			}
+			if len(loras) > 0 {
+				break
+			}
+		}
+	}
+	// deduplicate
+	seen := map[string]bool{}
+	uniqLoras := []string{}
+	for _, l := range loras {
+		if !seen[l] {
+			seen[l] = true
+			uniqLoras = append(uniqLoras, l)
+		}
+	}
+	writeJSON(w, 200, map[string]any{"unets": unets, "loras": uniqLoras})
 }
 
 func (s *Server) handleLegacy(w http.ResponseWriter, r *http.Request) {

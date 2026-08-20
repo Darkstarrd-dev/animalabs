@@ -298,6 +298,11 @@ worst quality, low quality, blurry, text, watermark
 | 2026-08-20 | sampler 对比 | `er_sde/simple/cfg1` vs `euler/normal/cfg2` vs `dpmpp_2m/karras/cfg1.5` | `euler/cfg2` 更锐，待补图 | `turbo-compare` |
 | 2026-08-20 | eye-back 景别 (frieren/fern 768×1024) | 5种构图×2角色 eye-back，fern cowboy 长袍无解、bust/head 需直视背面约束 | 头像/胸像加 `back of head, eyes not visible` 后修正面；cowboy 站立需 `(standing:1.5)` 仍有蹲，长袍判定无解 | `frieren-fern-eye-back-v4` |
 | 2026-08-20 | 指南 v0.2 扩充 | 遍历 9 源：Anima-Prompt/AnimaTool/Comfyui-Anima-Prompt/circlestone/README/Finnsprite/2.9B/Tomiigo pipeline/Style Explorer/Danbooru | 补变体表/转义/权重/安全必选/单行/语义映射/采样调度/分辨率/宽高比/数据集标签/组织层 | — |
+| 2026-08-20 | 双预设 + Header 模型控件 | `turbo`（`anima_turboV10`）与 `base`（由 `anima_good` UI workflow 转 API，`anima-preview3-base` + 可选 `anima-turbo-lora-v0.2` 链）；Header 增 `预设/UNET/Lora1-3` + `/api/presets·/api/meta`；CLI `--preset/--unet/--loras` | 端到端走通（`serve` + `POST /api/run` body 注入；`off` 过滤、weight `±10` clamp、≤3 链）；详 `start.md §2/§7` | `hdr-e2e*` 已验证后清理 |
+| 2026-08-20 | 高过头顶正后俯视矩阵 | `frieren/fern` × `head/bust/half/full` × `high30°/steep45°/top60°` 24项（768×1024），`cowboy` 已剔；`fern-bust` 高俯 bust 穿透穿模另起修复 | 初跑：frieren 12/12 成；fern bust 3项中 2项翻面（裙胸跳到背侧 / 顶视大胸），已就地 patch 后通过 | `high-overhead-behind` |
+| 2026-08-20 | fern bust 高俯防翻面 | bust 由 `chest up` 改 `upper back / back of shoulders / coat back view / shoulder blades / spine line / upper back fabric, chest not visible`，NL 重定向到背部；负面追加 `large/huge breasts, breasts visible, cleavage, chest front, front of dress, top view of chest` | patch 仅对 `fern-bust-{high30,steep45,top60}` 现场替换，dry-run 无 warn，待二跑复验 | `high-overhead-behind:fern-bust-*` |
+| 2026-08-20 | Header 布局崩 + 下拉白字 | topbar 56px→min-height+wrap，hdr-presets 改 flex:1 1 520px，#selUnet 横控改 CSS 宽；select/option 背景从半透明改为 `var(--panel)` 深底白字 | 本地重绘不溢出，`go vet / build.ps1 → 6.9MB` | — |
+| 2026-08-20 | Header 分组重跑 + base 可用化 | `base` 缺文件对齐到 `fnMixAnimaTurbo_baseNoTurbo`；`fetchHdrMeta` 初始化链修复；`handleRun/post` 支持 `group/subgroup/items` 入参并自动 force，重跑仅替分组；暴露 `GET /api/presets·/api/meta` | `verify-turbo/base/base-lora` 与 `rerun-group-test2` 全 `done`（分组替前后 sha 对比） | — |
 |  |  |  |  |  |
 |  |  |  |  |  |
 

@@ -275,6 +275,9 @@ func runRun(args []string) {
 	dryRun := fs.Bool("dry-run", false, "only print resolved 9 dims")
 	limit := fs.Int("limit", 0, "max items to run (0=all)")
 	force := fs.Bool("force", false, "re-run done items")
+	cliPreset := fs.String("preset", "", "preset turbo|base (header override)")
+	cliUnet := fs.String("unet", "", "unet_name override (header override)")
+	cliLoras := fs.String("loras", "", "loras JSON header override")
 	// support flags after positional: extract known flags manually before Parse
 	var filtered []string
 	var positional []string
@@ -283,6 +286,18 @@ func runRun(args []string) {
 		if a == "--dry-run" {
 			filtered = append(filtered, a)
 		} else if a == "--force" {
+			filtered = append(filtered, a)
+		} else if a == "--preset" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 9 && a[:9] == "--preset=" {
+			filtered = append(filtered, a)
+		} else if a == "--unet" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 7 && a[:7] == "--unet=" {
+			filtered = append(filtered, a)
+		} else if a == "--loras" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 8 && a[:8] == "--loras=" {
 			filtered = append(filtered, a)
 		} else if a == "--limit" && i+1 < len(args) {
 			filtered = append(filtered, a, args[i+1]); i++
@@ -320,6 +335,21 @@ func runRun(args []string) {
 		fmt.Fprintf(os.Stderr, "load %s: %v\n", jobPath, err)
 		os.Exit(1)
 	}
+	// apply CLI header overrides (same semantics as server header)
+	if *cliPreset != "" && jobs.ValidPresets[*cliPreset] {
+		cp := *cliPreset
+		j.Defaults.Preset = &cp
+	}
+	if *cliUnet != "" {
+		cu := *cliUnet
+		j.Defaults.UnetName = &cu
+	}
+	if *cliLoras != "" {
+		var parsed []jobs.LoraSlot
+		if err := json.Unmarshal([]byte(*cliLoras), &parsed); err == nil {
+			j.Defaults.Loras = parsed
+		}
+	}
 	jobDir := filepath.Dir(jobPath)
 	// derive date/job name
 	date := j.Date
@@ -347,8 +377,8 @@ func runRun(args []string) {
 					errMsg = fmt.Sprintf(" ERROR %s:%s", ve.Field, ve.Message)
 				}
 			}
-			fmt.Printf("item %s: %dx%d steps=%d seed=%d sampler=%s scheduler=%s cfg=%v pos=%q neg=%q%s%s\n",
-				r.ID, r.Width, r.Height, r.Steps, r.Seed, r.Sampler, r.Scheduler, r.Cfg, r.PositivePrompt, r.NegativePrompt, warnStr, errMsg)
+			fmt.Printf("item %s: %dx%d steps=%d seed=%d sampler=%s scheduler=%s cfg=%v preset=%s unet=%s loras=%v pos=%q neg=%q%s%s\n",
+				r.ID, r.Width, r.Height, r.Steps, r.Seed, r.Sampler, r.Scheduler, r.Cfg, r.Preset, r.UnetName, r.Loras, r.PositivePrompt, r.NegativePrompt, warnStr, errMsg)
 		}
 		if len(valErrs) > 0 {
 			fmt.Fprintf(os.Stderr, "validation: %d errors\n", len(valErrs))
@@ -410,6 +440,10 @@ func runRun(args []string) {
 		}
 
 		prefix := jobName + "_" + r.ID
+		loraReqs := []comfy.LoraReq{}
+		for _, lr := range r.Loras {
+			loraReqs = append(loraReqs, comfy.LoraReq{Name: lr.Name, Weight: lr.Weight})
+		}
 		req := comfy.SubmitReq{
 			Width:     r.Width,
 			Height:    r.Height,
@@ -421,6 +455,9 @@ func runRun(args []string) {
 			Scheduler: r.Scheduler,
 			Cfg:       r.Cfg,
 			Prefix:    prefix,
+			Preset:    r.Preset,
+			UnetName:  r.UnetName,
+			Loras:     loraReqs,
 		}
 		// mark queued
 		j.Items[idx].Status = "queued"
