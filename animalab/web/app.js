@@ -182,7 +182,7 @@ async function loadJob(date,job){
     // if selected scene no longer exists, clear it
     if(state.scene && !scenes.find(s=> s.scene===state.scene)) { state.scene=''; state.variant=''; }
     renderScenes(); renderGallery(); updateKpi(); renderTree();
-    if(state.item) openDrawer(state.item);
+    if(!state._suppressDrawer && state.item) openDrawer(state.item);
     await syncRunStatus();
     startPolling();
   }catch(e){ console.error(e); }
@@ -283,22 +283,34 @@ function renderScenes(){
     const head=li.querySelector('.scene-head');
     head.onclick=e=>{
       if(e.target.closest('.badge')) return;
-      // toggle collapse if clicking chev area? we distinguish: if active and no variant, collapse toggle
       if(state.scene===g.scene && !state.variant){
         if(sceneCollapsed.has(g.scene)) sceneCollapsed.delete(g.scene); else sceneCollapsed.add(g.scene);
         renderScenes();
         return;
       }
-      state.scene=g.scene; state.variant=''; pushHash(); // clear collapsed for selected
+      state.scene=g.scene; state.variant=''; pushHash();
       sceneCollapsed.delete(g.scene);
       renderScenes(); renderGallery();
+      requestAnimationFrame(()=> head.scrollIntoView({block:'nearest', behavior:'smooth'}));
     };
-    // also allow collapsing via chev click is same; provide separate collapse on chev double behavior handled above
     const chev=li.querySelector('.chev');
     chev.onclick=e=>{ e.stopPropagation(); if(sceneCollapsed.has(g.scene)) sceneCollapsed.delete(g.scene); else sceneCollapsed.add(g.scene); renderScenes(); };
     body.onclick=e=> e.stopPropagation();
     ul.appendChild(li);
   }
+  // auto-scroll selected scene into view (Ctrl+Up/Down may change to far group)
+  requestAnimationFrame(()=>{
+    const activeHead = ul.querySelector('.scene-head[aria-expanded]') && ul.querySelector('.scene-item .scene-head');
+    // find active by matching state.scene
+    const scenes = state.curJob && state.curJob._scenes || [];
+    const idx = scenes.findIndex(s=> s.scene===state.scene);
+    if(idx>=0){
+      const heads = ul.querySelectorAll('.scene-head');
+      // heads[0] is "全部", so offset 1
+      const target = heads[idx+1];
+      if(target) target.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }
+  });
 }
 function filteredCountForScene(key){ if(!state.curJob) return 0; if(!key) return filteredItems().length; return 0; }
 
@@ -557,8 +569,12 @@ function updateBatchBar(){
   else bar.style.display='none';
 }
 async function doReview(id, verdict, reason, tags){
+  // batch siblings (__bN) share backend record; map to original
+  const _displayId = id;
+  const backendId = (typeof id==='string' && id.includes('__b')) ? id.split('__b')[0] : id;
+  id = backendId;
   if(!state.date||!state.curJob) return;
-  const payload={ date:state.date, job:state.curJob.job_id, item_id:id, verdict, reason: reason||'', tags: tags||[] };
+  const payload={ date:state.date, job:state.curJob.job_id, item_id:backendId, verdict, reason: reason||'', tags: tags||[] };
   const form=document.querySelector('#drawerBody [data-form-id="'+CSS.escape(id)+'"]');
   if(form && reason===undefined){
     payload.reason=form.querySelector('[name=reason]').value;
@@ -572,7 +588,7 @@ async function doReview(id, verdict, reason, tags){
     if(!res.ok) throw new Error(await res.text());
     await res.json();
     await loadJob(state.date, state.curJob.job_id);
-    if(document.getElementById('lightbox').classList.contains('open') && state.item===id) openLightbox(id);
+    if(!state._suppressDrawer && document.getElementById('lightbox').classList.contains('open') && (_displayId===state.item || backendId===state.item || _displayId.split('__b')[0]===state.item.split('__b')[0])) openLightbox(state.item);
   }catch(e){ alert('标注失败: '+e.message); }
 }
 
@@ -601,7 +617,6 @@ function openDrawer(id){
   const url=it._displayUrl || imageUrl(it);
   const hasImg=!!url && it.status==='done' && !(it.output && it.output.missing) && !(it.output && it.output.deleted);
   const _drawerIsSibling = it._batchTotal>1;
-  const batchHtml = urls.length>1 ? `<div style="margin-top:8px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px">${urls.map((u,i)=>`<a href="${u}" target="_blank" rel="noopener" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#020617;display:block"><img src="${u}" style="width:100%;display:block;aspect-ratio:1/1;object-fit:contain;background:#020617" loading="lazy" alt="#${escapeHtml(id)} #${i+1}"><span style="display:block;text-align:center;font:600 11px/1 Fira Code,monospace;color:var(--muted);padding:4px">#${i+1}</span></a>`).join('')}</div>` : '';
   $('#drawerBody').innerHTML=`
     ${hasImg? `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#020617"><img src="${url}" alt="#${escapeHtml(it._displayId||id)}" style="width:100%;display:block">${_drawerIsSibling? `<span style="display:block;text-align:center;font:600 11px/1.4 Fira Code,monospace;color:var(--muted);padding:6px">batch ${it._batchIndex+1}/${it._batchTotal}</span>`:''}</div>` : `<div class="empty" style="margin:0">${it.status==='failed'?'失败': it.status==='pending'?'待生成':'无图'}</div>`}
     <div style="margin-top:12px" class="kv">
@@ -736,7 +751,8 @@ function lightboxStep(dir){
   }
   lightboxStepWithin(dir);
 }
-function lightboxStepScene(dir){
+function lightboxStepScene(dir, openInLightbox){
+  if(openInLightbox===undefined) openInLightbox=$('#lightbox').classList.contains('open');
   const scenes=orderedScenes(); if(!scenes.length) return;
   let curIdx=scenes.findIndex(s=> s.scene===state.scene);
   if(curIdx<0) curIdx=dir===1? -1 : 0;
@@ -744,7 +760,26 @@ function lightboxStepScene(dir){
   if(nextIdx<0 || nextIdx>=scenes.length) return;
   state.scene=scenes[nextIdx].scene; state.variant=''; pushHash(); renderScenes(); renderGallery();
   const ids=visibleIds();
-  if(ids.length) openLightbox(ids[0]);
+  if(openInLightbox && ids.length) openLightbox(ids[0]);
+}
+function lightboxStepVariant(dir, openInLightbox){
+  if(openInLightbox===undefined) openInLightbox=$('#lightbox').classList.contains('open');
+  if(!state.curJob||!state.scene) return;
+  const pairs=orderedVariants();
+  const curKey = state.scene+''+(state.variant||'');
+  let pi=pairs.findIndex(p=> p[0]==state.scene && (p[1]||'')===(state.variant||''));
+  if(pi<0) pi=pairs.findIndex(p=> p[0]==state.scene);
+  if(pi<0) return;
+  const nextPi=pi+dir;
+  if(nextPi<0||nextPi>=pairs.length) return;
+  const [ns,nv]=pairs[nextPi];
+  const beforeScene=state.scene, beforeVar=state.variant;
+  state.scene=ns; state.variant=nv||'';
+  let ids=visibleIds();
+  // fallback to group-only if subgroup empty
+  if(!ids.length){ state.variant=''; ids=visibleIds(); if(!ids.length){ state.scene=beforeScene; state.variant=beforeVar; return; } }
+  pushHash(); renderScenes(); renderGallery();
+  if(openInLightbox && ids.length) openLightbox(ids[0]);
 }
 function drawerInnerHtml(id){
   const it=findDisplayItem(id) || state.curJob.items.find(x=>x.id===id);
@@ -805,19 +840,8 @@ function openLightbox(id){
   const img=$('#lbImg');
   if(url && it.status==='done' && !it.output.missing && !it.output.deleted){ img.src=url; img.style.display=''; img.alt='#'+id; }
   else { img.removeAttribute('src'); img.style.display='none'; }
-  const batchStrip = urls.length>1 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 10px 0 10px;padding:6px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.03)"><span style="font:700 11px/1.4 Fira Code,monospace;color:var(--muted);align-self:center">batch ×${urls.length}</span>${urls.map((u,i)=>`<button data-lb-batch="${i}" style="width:56px;height:56px;padding:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#020617;cursor:pointer;opacity:${i===0?.95:.7}" title="#${i+1}"><img src="${u}" style="width:100%;height:100%;object-fit:cover;display:block"></button>`).join('')}</div>` : '';
-  let stripEl=document.getElementById('lbBatchStrip');
-  if(!stripEl){
-    stripEl=document.createElement('div'); stripEl.id='lbBatchStrip';
-    stripEl.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:2';
-    document.getElementById('lbMedia').appendChild(stripEl);
-  }
-  stripEl.innerHTML = urls.length>1 ? batchStrip : '';
-  if(urls.length>1){
-    stripEl.querySelectorAll('[data-lb-batch]').forEach(btn=>{
-      btn.onclick=()=>{ const i=parseInt(btn.getAttribute('data-lb-batch'),10); const u=urls[i]; if(u){ img.src=u; stripEl.querySelectorAll('[data-lb-batch]').forEach(b=> b.style.opacity='.7'); btn.style.opacity='1'; } };
-    });
-  }
+  // batch siblings are now independent cards; clear legacy container
+  const _strip=document.getElementById('lbBatchStrip'); if(_strip) _strip.innerHTML='';
   const meta=$('#lbMeta');
   const verdict=(it.review&&it.review.verdict)||'unreviewed';
   const ids=visibleIds(); const pos=ids.indexOf(id)+1;
@@ -845,7 +869,7 @@ function openLightbox(id){
   if(hard) hard.onclick=async()=>{
     if(!confirm('物理删除图片文件并保留记录？')) return;
     if(!confirm('二次确认：删除 '+id+' 的图片文件？')) return;
-    try{ const res=await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:state.date, job:state.curJob.job_id, item_id:id, hard:true})}); if(!res.ok) throw new Error(await res.text()); await loadJob(state.date, state.curJob.job_id); const nids=visibleIds(); if(nids.length) openLightbox(nids[Math.min(pos-1, nids.length-1)]); else closeLightbox(); }catch(e){ alert('删除失败: '+e.message); }
+    try{ const bid=id.includes('__b')? id.split('__b')[0]:id; const res=await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:state.date, job:state.curJob.job_id, item_id:bid, hard:true})}); if(!res.ok) throw new Error(await res.text()); await loadJob(state.date, state.curJob.job_id); const nids=visibleIds(); if(nids.length) openLightbox(nids[Math.min(pos-1, nids.length-1)]); else closeLightbox(); }catch(e){ alert('删除失败: '+e.message); }
   };
   const closeBtn=meta.querySelector('[data-close-lightbox]');
   if(closeBtn) closeBtn.onclick=closeLightbox;
@@ -876,16 +900,44 @@ $('#lightbox').addEventListener('wheel', e=>{ e.stopPropagation(); }, {passive:f
 $('#lbPrev').addEventListener('click', e=>{ e.stopPropagation(); lightboxStep(-1); });
 $('#lbNext').addEventListener('click', e=>{ e.stopPropagation(); lightboxStep(1); });
 document.addEventListener('keydown', e=>{
+  // F: toggle lightbox for selected item (non-typing contexts)
+  const _tag=(e.target&&e.target.tagName)||''; const _typing=_tag==='INPUT'||_tag==='TEXTAREA'||_tag==='SELECT'||(e.target&&e.target.isContentEditable);
+  if(!_typing && (e.key==='f' || e.key==='F') && !(e.ctrlKey || e.altKey || e.metaKey)){
+    e.preventDefault();
+    if($('#lightbox').classList.contains('open')) closeLightbox(); else if(state.item) openLightbox(state.item); else if(state.curJob && visibleIds().length) openLightbox(visibleIds()[0]);
+    return;
+  }
   const lbOpen=$('#lightbox').classList.contains('open');
+  // Ctrl+Up/Down (top-level group) and Alt+Up/Down (subgroup) work both inside and outside lightbox
+  if(e.ctrlKey && (e.key==='ArrowUp' || e.key==='ArrowDown')){
+    const tag=(e.target&&e.target.tagName)||''; const isTyping=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(e.target&&e.target.isContentEditable);
+    if(!isTyping) { e.preventDefault(); e.stopPropagation(); lightboxStepScene(e.key==='ArrowUp'? -1: 1, lbOpen); return; }
+  }
+  if(e.altKey && (e.key==='ArrowUp' || e.key==='ArrowDown')){
+    const tag=(e.target&&e.target.tagName)||''; const isTyping=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(e.target&&e.target.isContentEditable);
+    if(!isTyping) { e.preventDefault(); e.stopPropagation(); lightboxStepVariant(e.key==='ArrowUp'? -1: 1, lbOpen); return; }
+  }
   if(lbOpen){
     if(e.key==='ArrowLeft' || e.key==='ArrowRight'){ e.preventDefault(); lightboxStep(e.key==='ArrowLeft'? -1: 1); return; }
-    if(e.key==='ArrowUp' || e.key==='ArrowDown'){ e.preventDefault(); lightboxStepScene(e.key==='ArrowUp'? -1: 1); return; }
+    if(e.key==='ArrowUp' || e.key==='ArrowDown'){ e.preventDefault(); lightboxStepScene(e.key==='ArrowUp'? -1: 1, true); return; }
+    if(e.key==='NumpadAdd' || e.code==='NumpadAdd' || e.key==='Add'){ e.preventDefault(); state._suppressDrawer=true; doReview(state.item,'kept').finally(()=>{ state._suppressDrawer=false; setTimeout(()=> closeDrawer(), 0); }); return; }
+    if(e.key==='NumpadSubtract' || e.code==='NumpadSubtract' || e.key==='Subtract'){ e.preventDefault(); state._suppressDrawer=true; doReview(state.item,'rejected').finally(()=>{ state._suppressDrawer=false; setTimeout(()=> closeDrawer(), 0); }); return; }
     if(e.key==='1' || e.key==='2'){
       if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
       e.preventDefault();
       const verdict=e.key==='1' ? 'kept' : 'rejected';
-      if(state.item) doReview(state.item, verdict);
+      if(state.item) { state._suppressDrawer=true; doReview(state.item, verdict).finally(()=>{ state._suppressDrawer=false; setTimeout(()=> closeDrawer(), 0); }); }
       return;
+    }
+  }
+  // Numpad +/- batch keep/reject for current top-level group (only when not in lightbox) - never open drawer
+  if(!lbOpen && (e.code==='NumpadAdd' || e.code==='NumpadSubtract' || e.key==='Add' || e.key==='Subtract')){
+    const tag2=(e.target&&e.target.tagName)||''; const isTyping2=tag2==='INPUT'||tag2==='TEXTAREA'||tag2==='SELECT'||(e.target&&e.target.isContentEditable);
+    if(!isTyping2 && state.curJob && state.scene){
+      const isAdd=(e.code==='NumpadAdd' || e.key==='Add');
+      const verdict=isAdd?'kept':'rejected';
+      const ids=(state.curJob.items||[]).filter(it=> groupKey(it)===state.scene).map(it=> it.id);
+      if(ids.length){ e.preventDefault(); e.stopPropagation(); state._suppressDrawer=true; (async()=>{ try{ $('#status').textContent=`批量${verdict==='kept'?'保留':'驳回'} ${ids.length} 项…`; for(const id of ids){ try{ await doReview(id, verdict, '', [], true); }catch{} } $('#status').textContent=`已${verdict==='kept'?'保留':'驳回'} ${ids.length} 项`; }finally{ state._suppressDrawer=false; setTimeout(()=> { closeDrawer(); $('#status').textContent=''; }, 600); } })(); return; }
     }
   }
   if(e.key==='Escape'){ if(lbOpen) closeLightbox(); else if($('#drawer').classList.contains('open')) closeDrawer(); }
