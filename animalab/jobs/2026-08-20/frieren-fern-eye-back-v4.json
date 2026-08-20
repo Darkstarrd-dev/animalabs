@@ -1,0 +1,725 @@
+{
+  "schema_version": 1,
+  "job_id": "frieren-fern-eye-back-v4",
+  "date": "2026-08-20",
+  "created_at": "2026-08-20T17:45:00Z",
+  "defaults": {
+    "width": 768,
+    "height": 1024,
+    "steps": 6,
+    "sampler": "er_sde",
+    "scheduler": "simple",
+    "cfg": 1.0,
+    "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo"
+  },
+  "items": [
+    {
+      "id": "frieren-head-s01",
+      "group": "frieren",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "frieren-head-s02",
+      "group": "frieren",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "frieren-head-s03",
+      "group": "frieren",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "frieren-head-s04",
+      "group": "frieren",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "frieren-head-s05",
+      "group": "frieren",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "frieren-bust-s01",
+      "group": "frieren",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "frieren-bust-s02",
+      "group": "frieren",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "frieren-bust-s03",
+      "group": "frieren",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "frieren-bust-s04",
+      "group": "frieren",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "frieren-bust-s05",
+      "group": "frieren",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "frieren-half-s01",
+      "group": "frieren",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-half-s02",
+      "group": "frieren",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-half-s03",
+      "group": "frieren",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-half-s04",
+      "group": "frieren",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-half-s05",
+      "group": "frieren",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-cowboy-s01",
+      "group": "frieren",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.4), upright, straight legs, feet on ground, not sitting, not squatting, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture and straight legs, feet on ground, not crouching. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, crouching, kneeling, bent knees, curling up"
+    },
+    {
+      "id": "frieren-cowboy-s02",
+      "group": "frieren",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.4), upright, straight legs, feet on ground, not sitting, not squatting, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture and straight legs, feet on ground, not crouching. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, crouching, kneeling, bent knees, curling up"
+    },
+    {
+      "id": "frieren-cowboy-s03",
+      "group": "frieren",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.4), upright, straight legs, feet on ground, not sitting, not squatting, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture and straight legs, feet on ground, not crouching. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, crouching, kneeling, bent knees, curling up"
+    },
+    {
+      "id": "frieren-cowboy-s04",
+      "group": "frieren",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.4), upright, straight legs, feet on ground, not sitting, not squatting, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture and straight legs, feet on ground, not crouching. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, crouching, kneeling, bent knees, curling up"
+    },
+    {
+      "id": "frieren-cowboy-s05",
+      "group": "frieren",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.4), upright, straight legs, feet on ground, not sitting, not squatting, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture and straight legs, feet on ground, not crouching. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, crouching, kneeling, bent knees, curling up"
+    },
+    {
+      "id": "frieren-full-s01",
+      "group": "frieren",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-full-s02",
+      "group": "frieren",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-full-s03",
+      "group": "frieren",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-full-s04",
+      "group": "frieren",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "frieren-full-s05",
+      "group": "frieren",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, frieren, sousou no frieren, long white hair, pointed ears, green eyes, white and black mage outfit, gold earrings, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-head-s01",
+      "group": "fern",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "fern-head-s02",
+      "group": "fern",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "fern-head-s03",
+      "group": "fern",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "fern-head-s04",
+      "group": "fern",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "fern-head-s05",
+      "group": "fern",
+      "subgroup": "头像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, close-up, portrait, head shot, back of head, nape, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, standing, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, only the back of the head and nape with hair are visible, face not visible, head facing directly away, centered. Head shot against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face visible, eyes visible, facing forward"
+    },
+    {
+      "id": "fern-bust-s01",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-bust-s02",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-bust-s03",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-bust-s04",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-bust-s05",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-bust-s06",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 101,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-bust-s07",
+      "group": "fern",
+      "subgroup": "胸像",
+      "width": 768,
+      "height": 1024,
+      "seed": 202,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, bust shot, portrait, chest up, shoulders visible, back of head, nape, back of shoulders, hair from behind, eye-level, from behind, facing away, direct back view, eyes not visible, not front view, not facing viewer, standing, upright, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, direct back view of head, nape and shoulders, eyes not visible, facing directly away, centered. Bust shot against pure white background with soft even lighting. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, front view, facing viewer, looking at viewer, face, eyes visible, chest front view, facing forward, three-quarter view"
+    },
+    {
+      "id": "fern-half-s01",
+      "group": "fern",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-half-s02",
+      "group": "fern",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-half-s03",
+      "group": "fern",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-half-s04",
+      "group": "fern",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-half-s05",
+      "group": "fern",
+      "subgroup": "半身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, upper body, half body, waist up, eye-level, from behind, facing away, direct back view, standing, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Upper body waist up centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-cowboy-s01",
+      "group": "fern",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.5), upright, straight posture, straight legs, legs straight under long dress, feet on ground, long dress draping naturally while standing, not sitting, not squatting, not kneeling, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture, long black coat and white dress draping naturally to knees while standing, legs straight under the dress with feet on the ground, not squatting or sitting with knees to chest. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, kneeling, crouching, bent knees, knees to chest, sitting on ground, crotch, legs folded, long dress bunching while sitting"
+    },
+    {
+      "id": "fern-cowboy-s02",
+      "group": "fern",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.5), upright, straight posture, straight legs, legs straight under long dress, feet on ground, long dress draping naturally while standing, not sitting, not squatting, not kneeling, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture, long black coat and white dress draping naturally to knees while standing, legs straight under the dress with feet on the ground, not squatting or sitting with knees to chest. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, kneeling, crouching, bent knees, knees to chest, sitting on ground, crotch, legs folded, long dress bunching while sitting"
+    },
+    {
+      "id": "fern-cowboy-s03",
+      "group": "fern",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.5), upright, straight posture, straight legs, legs straight under long dress, feet on ground, long dress draping naturally while standing, not sitting, not squatting, not kneeling, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture, long black coat and white dress draping naturally to knees while standing, legs straight under the dress with feet on the ground, not squatting or sitting with knees to chest. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, kneeling, crouching, bent knees, knees to chest, sitting on ground, crotch, legs folded, long dress bunching while sitting"
+    },
+    {
+      "id": "fern-cowboy-s04",
+      "group": "fern",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.5), upright, straight posture, straight legs, legs straight under long dress, feet on ground, long dress draping naturally while standing, not sitting, not squatting, not kneeling, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture, long black coat and white dress draping naturally to knees while standing, legs straight under the dress with feet on the ground, not squatting or sitting with knees to chest. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, kneeling, crouching, bent knees, knees to chest, sitting on ground, crotch, legs folded, long dress bunching while sitting"
+    },
+    {
+      "id": "fern-cowboy-s05",
+      "group": "fern",
+      "subgroup": "3/4身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, cowboy shot, medium shot, knees up, eye-level, from behind, facing away, direct back view, (standing:1.5), upright, straight posture, straight legs, legs straight under long dress, feet on ground, long dress draping naturally while standing, not sitting, not squatting, not kneeling, white background, simple background, soft lighting, even lighting. View is from eye level directly behind, facing directly away, standing upright with straight posture, long black coat and white dress draping naturally to knees while standing, legs straight under the dress with feet on the ground, not squatting or sitting with knees to chest. Cowboy shot centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      },
+      "negative_prompt": "worst quality, low quality, blurry, jpeg artifacts, bad anatomy, bad hands, extra fingers, text, watermark, logo, sitting, squatting, kneeling, crouching, bent knees, knees to chest, sitting on ground, crotch, legs folded, long dress bunching while sitting"
+    },
+    {
+      "id": "fern-full-s01",
+      "group": "fern",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 42,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-full-s02",
+      "group": "fern",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 123,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-full-s03",
+      "group": "fern",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 777,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-full-s04",
+      "group": "fern",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 2025,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    },
+    {
+      "id": "fern-full-s05",
+      "group": "fern",
+      "subgroup": "全身像",
+      "width": 768,
+      "height": 1024,
+      "seed": 9999,
+      "positive_prompt": "masterpiece, best quality, highres, newest, year 2025, safe, 1girl, solo, fern, sousou no frieren, long purple hair, purple eyes, black coat, white dress, puffy sleeves, full body, standing, feet visible, eye-level, from behind, facing away, direct back view, white background, simple background, soft lighting, even lighting. Portrait from eye level directly behind, facing away, direct back view, standing. Full body feet visible centered against pure white background. Clean lineart, anime illustration, soft even lighting, no shadows.",
+      "status": "pending",
+      "review": {
+        "verdict": "unreviewed"
+      }
+    }
+  ]
+}
