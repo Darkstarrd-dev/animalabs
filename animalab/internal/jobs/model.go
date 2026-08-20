@@ -75,6 +75,7 @@ type Defaults struct {
 	Height         *int       `json:"height,omitempty"`
 	Steps          *int       `json:"steps,omitempty"`
 	Seed           *int64     `json:"seed,omitempty"`
+	Batch          *int       `json:"batch,omitempty"`
 	NegativePrompt *string    `json:"negative_prompt,omitempty"`
 	Sampler        *string    `json:"sampler,omitempty"`
 	Scheduler      *string    `json:"scheduler,omitempty"`
@@ -104,6 +105,7 @@ type Item struct {
 	Preset         *string   `json:"preset,omitempty"`
 	UnetName       *string   `json:"unet_name,omitempty"`
 	Loras          []LoraSlot `json:"loras,omitempty"`
+	Batch          *int      `json:"batch,omitempty"`
 	Status         string    `json:"status"`
 	Output         *Output   `json:"output,omitempty"`
 	Review         *Review   `json:"review,omitempty"`
@@ -137,6 +139,7 @@ type Resolved struct {
 	Height         int        `json:"height"`
 	Steps          int        `json:"steps"`
 	Seed           int64      `json:"seed"`
+	Batch          int        `json:"batch"`
 	PositivePrompt string     `json:"positive_prompt"`
 	NegativePrompt string     `json:"negative_prompt"`
 	Sampler        string     `json:"sampler"`
@@ -300,6 +303,11 @@ func (j *Job) Resolve(idx int) Resolved {
 	if it.UnetName != nil && strings.TrimSpace(*it.UnetName) != "" {
 		unetName = strings.TrimSpace(*it.UnetName)
 	}
+	batch := 1
+	if j.Defaults.Batch != nil { batch = *j.Defaults.Batch }
+	if it.Batch != nil { batch = *it.Batch }
+	if batch < 1 { batch = 1 }
+	if batch > 8 { batch = 8; warnings = append(warnings, "batch clamped to 8") }
 	loras := []LoraSlot{}
 	if len(j.Defaults.Loras) > 0 {
 		loras = j.Defaults.Loras
@@ -370,6 +378,7 @@ func (j *Job) Resolve(idx int) Resolved {
 		Height:         height,
 		Steps:          steps,
 		Seed:           seed,
+		Batch:          batch,
 		PositivePrompt: it.PositivePrompt,
 		NegativePrompt: neg,
 		Sampler:        sampler,

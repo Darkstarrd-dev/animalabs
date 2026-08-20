@@ -478,12 +478,17 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		Date     string         `json:"date"`
 		Job      string         `json:"job"`
 		Force    bool           `json:"force"`
-		Preset   string         `json:"preset"`
-		UnetName string         `json:"unet_name"`
-		Loras    []jobs.LoraSlot `json:"loras"`
-		Group    string         `json:"group"`
-		Subgroup string         `json:"subgroup"`
-		Items    []string       `json:"items"`
+		Preset    string         `json:"preset"`
+		UnetName  string         `json:"unet_name"`
+		Loras     []jobs.LoraSlot `json:"loras"`
+		Steps     *int            `json:"steps,omitempty"`
+		Cfg       *float64        `json:"cfg,omitempty"`
+		Sampler   string          `json:"sampler,omitempty"`
+		Scheduler string          `json:"scheduler,omitempty"`
+		Batch     *int            `json:"batch,omitempty"`
+		Group     string         `json:"group"`
+		Subgroup  string         `json:"subgroup"`
+		Items     []string       `json:"items"`
 	}
 	hdrBytes, _ := io.ReadAll(r.Body)
 	if len(hdrBytes) > 0 {
@@ -535,11 +540,11 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	if group != "" || subgroup != "" || len(filterItems) > 0 {
 		force = true
 	}
-	go s.runJob(date, jobName, force, hdrBody.Preset, hdrBody.UnetName, hdrBody.Loras, filterItems, group, subgroup)
-	writeJSON(w, 200, map[string]any{"started": true, "date": date, "job": jobName, "force": force, "preset": hdrBody.Preset, "unet_name": hdrBody.UnetName, "loras": hdrBody.Loras})
+	go s.runJob(date, jobName, force, hdrBody.Preset, hdrBody.UnetName, hdrBody.Loras, hdrBody.Steps, hdrBody.Cfg, hdrBody.Sampler, hdrBody.Scheduler, hdrBody.Batch, filterItems, group, subgroup)
+	writeJSON(w, 200, map[string]any{"started": true, "date": date, "job": jobName, "force": force, "preset": hdrBody.Preset, "unet_name": hdrBody.UnetName, "loras": hdrBody.Loras, "steps": hdrBody.Steps, "cfg": hdrBody.Cfg, "sampler": hdrBody.Sampler, "scheduler": hdrBody.Scheduler, "batch": hdrBody.Batch})
 }
 
-func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet string, hdrLoras []jobs.LoraSlot, filterItems []string, filterGroup, filterSubgroup string) {
+func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet string, hdrLoras []jobs.LoraSlot, hdrSteps *int, hdrCfg *float64, hdrSampler, hdrScheduler string, hdrBatch *int, filterItems []string, filterGroup, filterSubgroup string) {
 	key := date + "/" + jobFile
 	defer func() {
 		s.runningMu.Lock()
@@ -567,6 +572,23 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 	}
 	if hdrLoras != nil {
 		j0.Defaults.Loras = hdrLoras
+	}
+	if hdrSteps != nil {
+		j0.Defaults.Steps = hdrSteps
+	}
+	if hdrCfg != nil {
+		j0.Defaults.Cfg = hdrCfg
+	}
+	if hdrSampler != "" {
+		hdrSamplerCopy := hdrSampler
+		j0.Defaults.Sampler = &hdrSamplerCopy
+	}
+	if hdrScheduler != "" {
+		hdrSchedulerCopy := hdrScheduler
+		j0.Defaults.Scheduler = &hdrSchedulerCopy
+	}
+	if hdrBatch != nil {
+		j0.Defaults.Batch = hdrBatch
 	}
 	var indices []int
 	// order to match frontend: grouped display order (see jobs.OrderedIndices)
@@ -607,6 +629,23 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 		}
 		if hdrLoras != nil {
 			jCheck.Defaults.Loras = hdrLoras
+		}
+		if hdrSteps != nil {
+			jCheck.Defaults.Steps = hdrSteps
+		}
+		if hdrCfg != nil {
+			jCheck.Defaults.Cfg = hdrCfg
+		}
+		if hdrSampler != "" {
+			hdrSamplerCopy2 := hdrSampler
+			jCheck.Defaults.Sampler = &hdrSamplerCopy2
+		}
+		if hdrScheduler != "" {
+			hdrSchedulerCopy2 := hdrScheduler
+			jCheck.Defaults.Scheduler = &hdrSchedulerCopy2
+		}
+		if hdrBatch != nil {
+			jCheck.Defaults.Batch = hdrBatch
 		}
 		resolved := jCheck.Resolve(idx)
 		valErrs := jCheck.Validate()
@@ -652,6 +691,7 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 			Preset:    resolved.Preset,
 			UnetName:  resolved.UnetName,
 			Loras:     loraReqs,
+			Batch:     resolved.Batch,
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 190*time.Second)
 		result, err := s.comfyClient.Submit(ctx, req)
@@ -676,6 +716,13 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 			_ = jobs.AtomicSave(jobPath, j3)
 			s.mu.Unlock()
 			continue
+		}
+		if len(result.Images) > 1 {
+			base := strings.TrimSuffix(filename, ".png")
+			for i, bi := range result.Images[1:] {
+				sibling := fmt.Sprintf("%s_%02d.png", base, i+2)
+				_ = os.WriteFile(filepath.Join(outDir, sibling), bi.Bytes, 0644)
+			}
 		}
 		sha := sha256.Sum256(result.Bytes)
 		sha16 := hex.EncodeToString(sha[:])[:16]
@@ -919,7 +966,25 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 			uniqLoras = append(uniqLoras, l)
 		}
 	}
-	writeJSON(w, 200, map[string]any{"unets": unets, "loras": uniqLoras})
+	samplers := []string{}
+	schedulers := []string{}
+	if ksampler, ok := info["KSampler"].(map[string]any); ok {
+		if inp, ok := ksampler["input"].(map[string]any); ok {
+			if req, ok := inp["required"].(map[string]any); ok {
+				if list, ok := req["sampler_name"].([]any); ok && len(list) > 0 {
+					if enum, ok := list[0].([]any); ok {
+						for _, v := range enum { if s, ok := v.(string); ok { samplers = append(samplers, s) } }
+					}
+				}
+				if list, ok := req["scheduler"].([]any); ok && len(list) > 0 {
+					if enum, ok := list[0].([]any); ok {
+						for _, v := range enum { if s, ok := v.(string); ok { schedulers = append(schedulers, s) } }
+					}
+				}
+			}
+		}
+	}
+	writeJSON(w, 200, map[string]any{"unets": unets, "loras": uniqLoras, "samplers": samplers, "schedulers": schedulers})
 }
 
 func (s *Server) handleLegacy(w http.ResponseWriter, r *http.Request) {

@@ -91,6 +91,7 @@ type SubmitReq struct {
 	Height    int       `json:"height"`
 	Steps     int       `json:"steps"`
 	Seed      int64     `json:"seed"`
+	Batch     int       `json:"batch,omitempty"`
 	Positive  string    `json:"positive"`
 	Negative  string    `json:"negative"`
 	Sampler   string    `json:"sampler"`
@@ -102,6 +103,14 @@ type SubmitReq struct {
 	Loras     []LoraReq `json:"loras,omitempty"`
 }
 
+type BatchImage struct {
+	Bytes    []byte
+	W        int    `json:"w"`
+	H        int    `json:"h"`
+	SHA16    string `json:"sha16"`
+	Filename string `json:"filename"`
+}
+
 type SubmitResult struct {
 	PromptID  string `json:"prompt_id"`
 	Bytes     []byte `json:"-"`
@@ -109,6 +118,8 @@ type SubmitResult struct {
 	H         int    `json:"h"`
 	SHA16     string `json:"sha16"`
 	ElapsedMs int64  `json:"elapsed_ms"`
+	Filename  string `json:"filename"`
+	Images    []BatchImage `json:"images,omitempty"`
 }
 
 type promptResp struct {
@@ -161,6 +172,9 @@ func (c *Client) Submit(ctx context.Context, req SubmitReq) (SubmitResult, error
 	setText(tpl, "60:12", req.Negative)
 	setDim(tpl, "60:28", "width", req.Width)
 	setDim(tpl, "60:28", "height", req.Height)
+	if req.Batch > 1 {
+		setDim(tpl, "60:28", "batch_size", req.Batch)
+	}
 	if node, ok := tpl["60:19"].(map[string]any); ok {
 		if inputs, ok := node["inputs"].(map[string]any); ok {
 			inputs["steps"] = req.Steps
@@ -310,63 +324,72 @@ func (c *Client) Submit(ctx context.Context, req SubmitReq) (SubmitResult, error
 	if !ok || len(outputs) == 0 {
 		return SubmitResult{}, fmt.Errorf("no outputs for %s", pid)
 	}
-	var im map[string]any
+	var allMaps []map[string]any
 	for _, v := range outputs {
 		if outMap, ok := v.(map[string]any); ok {
 			if imgs, ok := outMap["images"].([]any); ok && len(imgs) > 0 {
-				if m, ok := imgs[0].(map[string]any); ok {
-					im = m
-					break
+				for _, raw := range imgs {
+					if m, ok := raw.(map[string]any); ok {
+						allMaps = append(allMaps, m)
+					}
 				}
 			}
 		}
 	}
-	if im == nil {
+	if len(allMaps) == 0 {
 		return SubmitResult{}, fmt.Errorf("no images in outputs for %s", pid)
 	}
-	filename, _ := im["filename"].(string)
-	subfolder, _ := im["subfolder"].(string)
-	typ, _ := im["type"].(string)
-	if typ == "" {
-		typ = "output"
+	// download all images in batch
+	images := make([]BatchImage, 0, len(allMaps))
+	for _, im := range allMaps {
+		filename, _ := im["filename"].(string)
+		subfolder, _ := im["subfolder"].(string)
+		typ, _ := im["type"].(string)
+		if typ == "" {
+			typ = "output"
+		}
+		qs := url.Values{}
+		qs.Set("filename", filename)
+		qs.Set("subfolder", subfolder)
+		qs.Set("type", typ)
+		viewURL := c.Host + "/view?" + qs.Encode()
+		req2, err := http.NewRequestWithContext(ctx, "GET", viewURL, nil)
+		if err != nil {
+			return SubmitResult{}, err
+		}
+		http2 := &http.Client{Timeout: 30 * time.Second}
+		resp2, err := http2.Do(req2)
+		if err != nil {
+			return SubmitResult{}, fmt.Errorf("GET /view: %w", err)
+		}
+		buf, err := io.ReadAll(resp2.Body)
+		resp2.Body.Close()
+		if err != nil {
+			return SubmitResult{}, err
+		}
+		if len(buf) < 24 {
+			return SubmitResult{}, fmt.Errorf("image too short %d", len(buf))
+		}
+		if string(buf[1:4]) != "PNG" {
+			return SubmitResult{}, fmt.Errorf("not PNG")
+		}
+		w := int(binary.BigEndian.Uint32(buf[16:20]))
+		h := int(binary.BigEndian.Uint32(buf[20:24]))
+		sha := sha256.Sum256(buf)
+		sha16 := hex.EncodeToString(sha[:])[:16]
+		images = append(images, BatchImage{Bytes: buf, W: w, H: h, SHA16: sha16, Filename: filename})
 	}
-	qs := url.Values{}
-	qs.Set("filename", filename)
-	qs.Set("subfolder", subfolder)
-	qs.Set("type", typ)
-	viewURL := c.Host + "/view?" + qs.Encode()
-	req2, err := http.NewRequestWithContext(ctx, "GET", viewURL, nil)
-	if err != nil {
-		return SubmitResult{}, err
-	}
-	http2 := &http.Client{Timeout: 30 * time.Second}
-	resp2, err := http2.Do(req2)
-	if err != nil {
-		return SubmitResult{}, fmt.Errorf("GET /view: %w", err)
-	}
-	defer resp2.Body.Close()
-	buf, err := io.ReadAll(resp2.Body)
-	if err != nil {
-		return SubmitResult{}, err
-	}
-	if len(buf) < 24 {
-		return SubmitResult{}, fmt.Errorf("image too short %d", len(buf))
-	}
-	if string(buf[1:4]) != "PNG" {
-		return SubmitResult{}, fmt.Errorf("not PNG")
-	}
-	w := int(binary.BigEndian.Uint32(buf[16:20]))
-	h := int(binary.BigEndian.Uint32(buf[20:24]))
-	sha := sha256.Sum256(buf)
-	sha16 := hex.EncodeToString(sha[:])[:16]
 	elapsed := time.Since(start).Milliseconds()
+	first := images[0]
 	return SubmitResult{
 		PromptID:  pid,
-		Bytes:     buf,
-		W:         w,
-		H:         h,
-		SHA16:     sha16,
+		Bytes:     first.Bytes,
+		W:         first.W,
+		H:         first.H,
+		SHA16:     first.SHA16,
 		ElapsedMs: elapsed,
+		Filename:  first.Filename,
+		Images:    images,
 	}, nil
 }
 

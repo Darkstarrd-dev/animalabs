@@ -278,6 +278,11 @@ func runRun(args []string) {
 	cliPreset := fs.String("preset", "", "preset turbo|base (header override)")
 	cliUnet := fs.String("unet", "", "unet_name override (header override)")
 	cliLoras := fs.String("loras", "", "loras JSON header override")
+	cliSteps := fs.Int("steps", 0, "header override steps 1-32 (0=follow plan)")
+	cliCfg := fs.Float64("cfg", 0, "header override cfg 0-20 (0=follow plan)")
+	cliSampler := fs.String("sampler", "", "header override sampler_name")
+	cliScheduler := fs.String("scheduler", "", "header override scheduler")
+	cliBatch := fs.Int("batch", 0, "header override batch 1-8 (0=follow plan)")
 	// support flags after positional: extract known flags manually before Parse
 	var filtered []string
 	var positional []string
@@ -298,6 +303,26 @@ func runRun(args []string) {
 		} else if a == "--loras" && i+1 < len(args) {
 			filtered = append(filtered, a, args[i+1]); i++
 		} else if len(a) > 8 && a[:8] == "--loras=" {
+			filtered = append(filtered, a)
+		} else if a == "--steps" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 8 && a[:8] == "--steps=" {
+			filtered = append(filtered, a)
+		} else if a == "--cfg" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 6 && a[:6] == "--cfg=" {
+			filtered = append(filtered, a)
+		} else if a == "--sampler" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 10 && a[:10] == "--sampler=" {
+			filtered = append(filtered, a)
+		} else if a == "--scheduler" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 12 && a[:12] == "--scheduler=" {
+			filtered = append(filtered, a)
+		} else if a == "--batch" && i+1 < len(args) {
+			filtered = append(filtered, a, args[i+1]); i++
+		} else if len(a) > 8 && a[:8] == "--batch=" {
 			filtered = append(filtered, a)
 		} else if a == "--limit" && i+1 < len(args) {
 			filtered = append(filtered, a, args[i+1]); i++
@@ -350,6 +375,26 @@ func runRun(args []string) {
 			j.Defaults.Loras = parsed
 		}
 	}
+	if *cliSteps != 0 {
+		cs := *cliSteps
+		j.Defaults.Steps = &cs
+	}
+	if *cliCfg != 0 {
+		cc := *cliCfg
+		j.Defaults.Cfg = &cc
+	}
+	if *cliSampler != "" {
+		csa := *cliSampler
+		j.Defaults.Sampler = &csa
+	}
+	if *cliScheduler != "" {
+		csh := *cliScheduler
+		j.Defaults.Scheduler = &csh
+	}
+	if *cliBatch != 0 {
+		cb := *cliBatch
+		j.Defaults.Batch = &cb
+	}
 	jobDir := filepath.Dir(jobPath)
 	// derive date/job name
 	date := j.Date
@@ -377,8 +422,8 @@ func runRun(args []string) {
 					errMsg = fmt.Sprintf(" ERROR %s:%s", ve.Field, ve.Message)
 				}
 			}
-			fmt.Printf("item %s: %dx%d steps=%d seed=%d sampler=%s scheduler=%s cfg=%v preset=%s unet=%s loras=%v pos=%q neg=%q%s%s\n",
-				r.ID, r.Width, r.Height, r.Steps, r.Seed, r.Sampler, r.Scheduler, r.Cfg, r.Preset, r.UnetName, r.Loras, r.PositivePrompt, r.NegativePrompt, warnStr, errMsg)
+			fmt.Printf("item %s: %dx%d steps=%d seed=%d sampler=%s scheduler=%s cfg=%v batch=%d preset=%s unet=%s loras=%v pos=%q neg=%q%s%s\n",
+				r.ID, r.Width, r.Height, r.Steps, r.Seed, r.Sampler, r.Scheduler, r.Cfg, r.Batch, r.Preset, r.UnetName, r.Loras, r.PositivePrompt, r.NegativePrompt, warnStr, errMsg)
 		}
 		if len(valErrs) > 0 {
 			fmt.Fprintf(os.Stderr, "validation: %d errors\n", len(valErrs))
@@ -458,6 +503,7 @@ func runRun(args []string) {
 			Preset:    r.Preset,
 			UnetName:  r.UnetName,
 			Loras:     loraReqs,
+			Batch:     r.Batch,
 		}
 		// mark queued
 		j.Items[idx].Status = "queued"

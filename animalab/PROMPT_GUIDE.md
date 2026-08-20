@@ -303,6 +303,8 @@ worst quality, low quality, blurry, text, watermark
 | 2026-08-20 | fern bust 高俯防翻面 | bust 由 `chest up` 改 `upper back / back of shoulders / coat back view / shoulder blades / spine line / upper back fabric, chest not visible`，NL 重定向到背部；负面追加 `large/huge breasts, breasts visible, cleavage, chest front, front of dress, top view of chest` | patch 仅对 `fern-bust-{high30,steep45,top60}` 现场替换，dry-run 无 warn，待二跑复验 | `high-overhead-behind:fern-bust-*` |
 | 2026-08-20 | Header 布局崩 + 下拉白字 | topbar 56px→min-height+wrap，hdr-presets 改 flex:1 1 520px，#selUnet 横控改 CSS 宽；select/option 背景从半透明改为 `var(--panel)` 深底白字 | 本地重绘不溢出，`go vet / build.ps1 → 6.9MB` | — |
 | 2026-08-20 | Header 分组重跑 + base 可用化 | `base` 缺文件对齐到 `fnMixAnimaTurbo_baseNoTurbo`；`fetchHdrMeta` 初始化链修复；`handleRun/post` 支持 `group/subgroup/items` 入参并自动 force，重跑仅替分组；暴露 `GET /api/presets·/api/meta` | `verify-turbo/base/base-lora` 与 `rerun-group-test2` 全 `done`（分组替前后 sha 对比） | — |
+| 2026-08-20 | Header 二行重构 + 下拉深色 + 采样覆盖 | 顶栏 `min-height→column(主/控两行)`，`option{background:var(--panel)}`；新增 `Steps/CFG/Batch/Sampler/Scheduler` 二排 Header，二排 `GET /api/meta.samplers/schedulers` 44/9 种，`reflectHdrFromJob` 计划↔Header 联动，`hdrUserEdited` 避覆 | `go vet/appcheck/build 6.9MB init` | — |
+| 2026-08-20 | 缩略图保持比例 + batch 吞吐开关 | `card-media img{width/height:100%;object-fit:contain}` 字母箱不裁；新增 `batch(60:28 batch_size)` Header 可选覆盖，`Submit/Images batch` + `siblings _02..` 单项批落 `N` 张；50 项实测单↔批 `4×单 18.4s vs batch4 4.7s(3.95×)`，512×512 `batch2 1.75s/张 / batch4 0.98s/张 / batch8 0.69s/张` | `verify-real-batch batch4 → b1(_02.._04).png` 4 档落盘，`dry-run --batch 4` 行可见 `batch=4` | — |
 |  |  |  |  |  |
 |  |  |  |  |  |
 

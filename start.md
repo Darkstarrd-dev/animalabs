@@ -4,7 +4,7 @@
 > **预设**：`turbo`（`Anime_Turbo_api.json`，`anima_turboV10.safetensors` UNET，默认）与 `base`（`Anima_base_api.json`，由 `anima_good` UI workflow 转换：`anima-preview3-base.safetensors` UNET + 可选 `anima-turbo-lora-v0.2` LoRA 链）。
 > **CLIP/VAE 共用**：`qwen_3_06b_base.safetensors` (CLIP) + `qwen_image_vae.safetensors` (VAE)
 > **验证**：ComfyUI 0.33.0 / Python 3.13.12 / RTX 5090D / `127.0.0.1:8188` 实测通过（2026-08-13）。
-> **控制维度**：9 维 — `width / height / steps / seed / positive_prompt / negative_prompt / sampler / scheduler / cfg` + 全局 `preset / unet / lora1-3`（Header 控件）。
+> **控制维度**：10 维 — `width / height / steps / batch / seed / positive_prompt / negative_prompt / sampler / scheduler / cfg` + 全局 `preset / unet / lora1-3` 及采样覆盖 `steps/cfg/sampler/scheduler/batch`（Header 二排可选 override，见 §7）。
 
 ---
 
@@ -63,7 +63,7 @@ curl -s http://127.0.0.1:8188/models/diffusion_models  # 需包含 anima_turboV1
 
 `base` 预设可选叠加 `anima-turbo-lora-v0.2` LoRA（强度默认 0.8，见 §7 Header 的 `lora` 控件；运行时由后端动态插入 `60:61/60:62/60:63 LoraLoaderModelOnly` 链到 `60:19.model`）。固定项无需控制：`KSampler.cfg=1.0, sampler_name=er_sde, scheduler=simple, denoise=1.0`。`SaveImage.filename_prefix` 仅控制落盘前缀（默认 `Anima`）。
 
-### 6 维映射（稳定 Node ID，直改 `inputs`）
+### 11 维映射（稳定 Node ID，直改 `inputs`，其中 5 维为 Header 可选覆盖）
 
 | 维度 | 节点 | 字段 | 约束 |
 |---|---|---|---|
@@ -73,6 +73,9 @@ curl -s http://127.0.0.1:8188/models/diffusion_models  # 需包含 anima_turboV1
 | `seed` | `60:19` | `seed` | 64-bit int，每次需变化否则命中缓存 |
 | `positive_prompt` | `60:11 CLIPTextEncode` | `text` | 英文，含 `masterpiece, best quality, anime` 前缀效果更稳 |
 | `negative_prompt` | `60:12 CLIPTextEncode` | `text` | 如 `worst quality, low quality, blurry, jpeg artifacts` |
+| `batch` | `60:28 EmptyLatentImage` | `batch_size` | 批量图数 1/2/4/8，>1 时一次批推 `N` 张变体 |
+| `sampler` / `scheduler` / `cfg` / `sampler_name` | `60:19 KSampler` | `sampler_name/scheduler/cfg` | 同 `steps`，Header 覆盖 |
+| `preset` / `unet` / `loras` | `60:44`/`60:61-63` | Header 全局覆盖 | `preset→模板、unet→unet_name、lora1-3→60:61-63 chain` |
 
 ---
 
@@ -126,7 +129,7 @@ def submit(width, height, steps, seed, pos, neg, prefix="Anima"):
 Anima 服务自身路由（`http://127.0.0.1:8765`）：
 
 - `GET /api/presets` → `{presets:[{id,turbo|base, file}]}`
-- `GET /api/meta` → `{unets:[...], loras:[...]}`（代理 ComfyUI `UNETLoader / LoraLoader*` 可选值，Header 下拉数据源）
+- `GET /api/meta` → `{unets:[...], loras:[...], samplers:[...], schedulers:[...]}`（代理 ComfyUI `UNETLoader / LoraLoader* / KSampler` 可选值，Header 二排下拉数据源）
 - `POST /api/run?date=&job=`（body 可选 `{preset, unet_name, loras:[...]}` 作为本次运行全局覆盖）
 - `GET /api/job?date=&job=`、`POST /api/review`、`POST /api/delete`、`GET /api/export?date=`、`GET /api/legacy`、`POST /api/quit`
 
@@ -180,7 +183,7 @@ ComfyUI 单队列串行执行，无需并发。
 
 ## 7. 批量与审核（Anima Batch Gallery）
 
-> 9 维可选（`sampler / scheduler / cfg` 等）外加全局 3 项（`preset / unet_name / loras`）由 Header 控件驱动（见下「Header 预设与模型」）。未填的 3 维回落到 `Anime_Turbo_api.json:60:19 KSampler` 当前值 `er_sde / simple / 1.0`；回落优先级 `item > job.defaults > workflowDefaults > 全局默认`；`preset/unet/lora` 回落同理 `item > job.defaults > 预设默认`。
+> 10 维可选（`sampler / scheduler / cfg / batch` 等）外加全局 7 项（`preset / unet_name / loras` + 采样覆盖 `steps / cfg / sampler / scheduler / batch`）由 Header 二排控件驱动（见下「Header 预设与模型」）。所有 Header 覆盖均可选——留空时跟随计划（item>defaults>workflowDefaults），大批量（2/4/8）显存开销更高，建议默认留空或按需开关。未填的 3 维回落到 `Anime_Turbo_api.json:60:19 KSampler` 当前值 `er_sde / simple / 1.0`；回落优先级 `item > job.defaults > workflowDefaults > 全局默认`；`preset/unet/lora` 与采样覆盖 `steps/cfg/sampler/scheduler/batch` 回落同理 `item > job.defaults > Header > 预设/全局默认`。
 
 ### 目录契约
 ```
@@ -209,19 +212,29 @@ Anima/                          # 根（入口 + 运行时，exe 双击即用）
   "items": [{ "id": "1", "scene": "forest", "variant": "4:3", "positive_prompt": "...", "status": "pending", "review": { "verdict": "unreviewed" } }]
 }
 ```
-新增 `scene`/`variant` 可选：`scene` 为场景分组（如 `forest/city`），`variant` 为该场景下的比例或变体名（如 `4:3/16:9/1:1`）；未填归“未分组”，前端按场景聚合、按比例展开。旧 job 缺省兼容，无需迁移。
+新增 `scene`/`variant` 可选：`scene` 为场景分组（如 `forest/city`），`variant` 为该场景下的比例或变体名（如 `4:3/16:9/1:1`）；`batch` 为并发图数（1/2/4/8，`EmptyLatent 60:28 batch_size`，每项一次 `KSampler` 批推落 `N` 张变体）；未填归“未分组”，前端按场景聚合、按比例展开。旧 job 缺省兼容，无需迁移（`batch` 缺省为 1）。
 
 预设与模型同样可在 `defaults`/`item` 声明（`preset: "turbo"|"base"`、`unet_name: "*.safetensors"`、`loras: [{name, weight}]`，`name` 为 `off`/空则跳过，`weight` 未填按 `1.0`，`±10` clamp，最多 3 条）。Header 控件作为**本次运行**的全局覆盖注入（仅内存态写入 `job.Defaults`，不落盘）；优先级仍 `item > defaults > Header > 预设默认`。
 
-### Header 预设与模型（新增）
+### Header 预设与模型及采样覆盖（新增，二排）
 
-`http://127.0.0.1:8765/` 顶部（`brand` 与 `▶运行批次` 之间）新增一排控件：
+`http://127.0.0.1:8765/` 顶部为两行式：第一行 `brand`/`actions`，第二行控制栏（`border-top` 隔离）：
 
-- **预设**（`selPreset`）：`turbo`（默认）/ `base`，决定读取 `Anime_Turbo_api.json` 或 `Anima_base_api.json` 作为模板。
-- **UNET**（`selUnet`）：所有 `anima*.safetensors`（来自 `GET /api/meta`）；默认空 = 跟随预设的 unet。
-- **Lora 1/2/3**（`selLora1-3` + 权重 `wtLora1-3`）：默认 `off`（禁权重输入），选中 `anima-turbo-lora-v0.2.safetensors` 等即生效、权重 `step 0.05 [-10,10]`（默认 0.8/1.0/1.0）。
-- 全部持久化 `localStorage anima.hdr.*`，重开页面恢复。
-- 点击 `▶运行批次` 时随 `POST /api/run` body 上传 `{preset, unet_name, loras}`。
+**第一组 — 预设**（`hdr-preset`）：
+
+- **预设**（`selPreset`）：`turbo`（默认）/ `base`，决定读取 `Anime_Turbo_api.json` 或 `Anima_base_api.json`。
+- **UNET**（`selUnet`）：所有可用 UNET（`GET /api/meta.unets`，默认空 = 跟随预设）。
+
+**第二组 — 采样覆盖**（`hdr-sampler`，全部留空 = 跟随计划；任意非空即覆盖，选取计划时会自动回显其 `defaults` 值，但可被 Header 手动改写）：
+- **Steps**（`inpSteps` 1–32）、**CFG**（`inpCfg` 0–20，`step 0.1`）、**Batch**（`selBatch` `—/1/2/4/8`，`EmptyLatent batch_size`，`4` 约 `0.98s/张`、大批显存更高，见下吞吐对照）、
+- **Sampler**（`selSampler`，`GET /api/meta.samplers` 44 种如 `euler/dpmpp_2m…`）、**Scheduler**（`selScheduler`，`karras/simple/normal…`）。
+
+**第三组 — LoRA**（`hdr-loras`）：
+- **Lora 1/2/3**（`selLora1-3` + 权重 `wtLora1-3`，`off` 漏选，`step 0.05 [-10,10]` 默认 0.8/1.0/1.0）。
+
+共通：全部 `localStorage anima.hdr.*` 持久化，`hdrUserEdited` 标记避免已手动改写的覆盖；`▶运行批次`/`↻ 重运行分组` 均以 `{preset, unet_name, loras, steps, cfg, batch, sampler, scheduler}` 作为 `POST /api/run` Header 全局覆盖（batch>1 时每项一次落 `N` 张 `_02..` 兄弟档）。
+
+**吞吐对照**（本机 5090D，512×512 s4，`er_sde/simple`）：单张≈4.5s；`batch2 3.5s(1.75s/张) / batch4 3.9s(0.98s/张) / batch8 5.5s(0.69s/张)`。计划级 `batch` 可保留为 1，短作业可 Header 临批切 4 加速。
 
 对应 `dry-run` / CLI / REST 见下方。
 
@@ -253,6 +266,7 @@ powershell -ExecutionPolicy Bypass -File animalab/build.ps1
 ./anima.exe run jobs/2026-08-20/example.json --dry-run --preset base
 ./anima.exe run jobs/2026-08-20/example.json --dry-run --preset base --unet anima_turboV10.safetensors
 ./anima.exe run jobs/2026-08-20/example.json --dry-run --loras '[{"name":"anima-turbo-lora-v0.2.safetensors","weight":0.8}]'
+./anima.exe run jobs/2026-08-20/example.json --dry-run --steps 6 --cfg 2.5 --batch 4 --sampler euler --scheduler normal
 
 # 服务显式
 ./anima.exe serve                          # + 自动弹浏览器
@@ -263,7 +277,7 @@ ANIMA_PORT=8765 COMFY_HOST=http://127.0.0.1:8188 ./anima.exe
 ./anima.exe kill --port 8765                 # 仅清理指定端口
 ```
 
-`--preset base` 读取 `Anima_base_api.json`（默认 `--preset turbo` 读 `Anime_Turbo_api.json`）；`--unet` 覆盖 `60:44.unet_name`；`--loras` 接收 JSON 数组（最多 3 条，`off`/空跳过，weight 默认 1.0），等价 Header 控件。`dry-run` 会打印每项 `preset / unet / loras`。
+`--preset base` 读 `Anima_base_api.json`（默认 `--preset turbo` 读 `Anime_Turbo_api.json`）；`--unet` 覆 `60:44.unet_name`；`--loras` 接 JSON 数组（≤3 条，`off/空`跳过，weight 默1.0）；`--steps/--cfg/--batch/--sampler/--scheduler` 覆采样及并发；均等价 Header 二排控件。`dry-run` 打印每项 `preset/unet/loras/steps/cfg/batch/sampler/scheduler`。
 
 `kill` 在 Windows 通过 `netstat -ano` 定位 `:8765 LISTENING` 且 `tasklist` 确认为 `anima` 的 PID 后 `taskkill /F`，再扫 `anima.exe` 映像兜底；Unix 走 `lsof -ti :port`/`fuser`+`pgrep -f anima`。均排除自身 PID，不会自杀；未命中则提示 `no anima tasks found`。
 

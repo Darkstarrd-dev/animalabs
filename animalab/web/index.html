@@ -8,25 +8,52 @@
 <link rel="stylesheet" href="web/style.css">
 <body>
 <header class="topbar" role="banner">
-  <div class="brand" aria-label="Anima Lab">
-    <button id="btnTreeToggle" class="btn-icon" title="折叠/展开左侧导航" aria-label="切换左侧导航">≡</button>
-    <div class="brand-mark" aria-hidden="true">AL</div>
-    <div>
-      <h1>Anima Lab</h1>
-      <small>Batch Gallery · Admin</small>
+  <div class="topbar-row topbar-main">
+    <div class="brand" aria-label="Anima Lab">
+      <button id="btnTreeToggle" class="btn-icon" title="折叠/展开左侧导航" aria-label="切换左侧导航">≡</button>
+      <div class="brand-mark" aria-hidden="true">AL</div>
+      <div>
+        <h1>Anima Lab</h1>
+        <small>Batch Gallery · Admin</small>
+      </div>
+    </div>
+    <div class="actions" role="toolbar" aria-label="全局操作">
+      <span id="livePill" class="pill live" title="服务在线">● LIVE</span>
+      <span id="status" class="pill" aria-live="polite"></span>
+      <button id="btnKill" class="btn-ghost" title="释放端口/清理幽灵进程">Kill</button>
+      <button id="btnDelJob" class="btn-ghost" title="删除当前选中的包（含定义与图片）" aria-label="删除当前包">🗑 删除包</button>
+      <button id="btnRun" class="btn" aria-label="运行当前批次">▶ 运行批次</button>
+      <button id="btnRerunGroup" class="btn" aria-label="重运行当前分组" style="display:none" disabled>↻ 重运行</button>
+      <button id="btnQuit" class="btn-danger" title="关闭网页并停止后端服务">Quit</button>
     </div>
   </div>
-  <div class="hdr-presets" role="group" aria-label="预设与模型">
-    <label class="hdr-field">预设
-      <select id="selPreset" class="sel">
-        <option value="turbo">turbo</option>
-        <option value="base">base</option>
-      </select>
-    </label>
-    <label class="hdr-field">UNET
-      <select id="selUnet" class="sel"><option value="">(跟随预设)</option></select>
-    </label>
-    <span class="hdr-loras" role="group" aria-label="Lora 1-3">
+  <div class="topbar-row topbar-controls" role="group" aria-label="预设与采样参数">
+    <span class="hdr-group" role="group" aria-label="预设">
+      <label class="hdr-field hdr-preset">预设
+        <select id="selPreset" class="sel"><option value="turbo">turbo</option><option value="base">base</option></select>
+      </label>
+      <label class="hdr-field hdr-unet">UNET
+        <select id="selUnet" class="sel"><option value="">(跟随预设)</option></select>
+      </label>
+    </span>
+    <span class="hdr-group hdr-sampler" role="group" aria-label="采样参数">
+      <label class="hdr-field">Steps
+        <input id="inpSteps" class="ipt-num" type="number" min="1" max="32" step="1" placeholder="—" title="覆盖计划的 steps（留空跟随计划）">
+      </label>
+      <label class="hdr-field">CFG
+        <input id="inpCfg" class="ipt-num ipt-cfg" type="number" min="0" max="20" step="0.1" placeholder="—" title="覆盖计划的 cfg（留空跟随计划）">
+      </label>
+      <label class="hdr-field">Batch
+        <select id="selBatch" class="sel" title="每项一次批量出图的数量（1=单张，>1=同prompt一次出N张变体，速度更快）"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option></select>
+      </label>
+      <label class="hdr-field">Sampler
+        <select id="selSampler" class="sel"><option value="">—</option></select>
+      </label>
+      <label class="hdr-field">Scheduler
+        <select id="selScheduler" class="sel"><option value="">—</option></select>
+      </label>
+    </span>
+    <span class="hdr-group hdr-loras" role="group" aria-label="Lora 1-3">
       <label class="hdr-field">Lora 1
         <select id="selLora1" class="sel sel-lora"><option value="off">off</option></select>
         <input id="wtLora1" class="ipt-wt" type="number" step="0.05" min="-10" max="10" value="0.8" title="权重" disabled>
@@ -40,15 +67,6 @@
         <input id="wtLora3" class="ipt-wt" type="number" step="0.05" min="-10" max="10" value="1.0" title="权重" disabled>
       </label>
     </span>
-  </div>
-  <div class="actions" role="toolbar" aria-label="全局操作">
-    <span id="livePill" class="pill live" title="服务在线">● LIVE</span>
-    <span id="status" class="pill" aria-live="polite"></span>
-    <button id="btnKill" class="btn-ghost" title="释放端口/清理幽灵进程">Kill</button>
-    <button id="btnDelJob" class="btn-ghost" title="删除当前选中的包（含定义与图片）" aria-label="删除当前包">🗑 删除包</button>
-    <button id="btnRun" class="btn" aria-label="运行当前批次">▶ 运行批次</button>
-    <button id="btnRerunGroup" class="btn" aria-label="重运行当前分组" style="display:none" disabled>↻ 重运行</button>
-    <button id="btnQuit" class="btn-danger" title="关闭网页并停止后端服务">Quit</button>
   </div>
 </header>
 
