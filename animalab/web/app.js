@@ -562,34 +562,59 @@ function lightboxStepWithin(dir){
   if(idx<0) idx=0; else idx=(idx+dir+ids.length)%ids.length;
   openLightbox(ids[idx]);
 }
+function orderedVariants(){
+  if(!state.curJob||!state.curJob.items) return [];
+  const g=state.scene; const v=state.variant;
+  // build list of all (scene,variant) pairs in display order
+  const scenes=orderedScenes();
+  const pairs=[];
+  for(const sc of scenes){
+    const vars=Object.keys(sc.variants||{});
+    if(!vars.length){
+      pairs.push([sc.scene,'']);
+    }else{
+      for(const vv of vars.sort((a,b)=>a.localeCompare(b))){
+        pairs.push([sc.scene,vv]);
+      }
+    }
+  }
+  return pairs;
+}
 function lightboxStep(dir){
   const ids=visibleIds(); if(!ids.length) return;
   const cur=state.item || ids[0];
   let idx=ids.indexOf(cur);
   if(idx<0) idx=0;
   const atFirst=idx===0, atLast=idx===ids.length-1;
-  // cross-scene: if at boundary, jump to next/prev scene's first/last visible
   if((dir===-1 && atFirst) || (dir===1 && atLast)){
-    const scenes=orderedScenes();
-    if(scenes.length && state.scene){
-      let si=scenes.findIndex(s=> s.scene===state.scene);
-      if(si>=0){
-        const nextSi=si+dir;
-        if(nextSi>=0 && nextSi<scenes.length){
-          const nextScene=scenes[nextSi].scene;
-          // find first visible id in next scene
-          const savedScene=state.scene, savedVariant=state.variant;
-          state.scene=nextScene; state.variant='';
-          const nextIds=visibleIds();
-          state.scene=savedScene; state.variant=savedVariant;
-          if(nextIds.length){
-            state.scene=nextScene; state.variant=''; pushHash(); renderScenes(); renderGallery();
-            const target=dir===1 ? nextIds[0] : nextIds[nextIds.length-1];
-            openLightbox(target); return;
-          }
-        }
-      }
+    if(!state.scene){
+      // no filter: just wrap within global
+      lightboxStepWithin(dir); return;
     }
+    const pairs=orderedVariants();
+    const curKey = state.scene+''+(state.variant||'');
+    let pi=pairs.findIndex(p=> p[0]==state.scene && (p[1]||'')===(state.variant||''));
+    // if current is group-only (variant='') but pairs has subgroups, find first pair with that group
+    if(pi<0){
+      pi=pairs.findIndex(p=> p[0]==state.scene);
+    }
+    if(pi<0){ lightboxStepWithin(dir); return; }
+    const nextPi=pi+dir;
+    if(nextPi<0||nextPi>=pairs.length){ lightboxStepWithin(dir); return; }
+    const [ns,nv]=pairs[nextPi];
+    const savedScene=state.scene, savedVariant=state.variant;
+    state.scene=ns; state.variant=nv;
+    let nextIds=visibleIds();
+    if(!nextIds.length){
+      // subgroup empty? try group-only
+      state.variant=''; nextIds=visibleIds();
+    }
+    if(!nextIds.length){
+      state.scene=savedScene; state.variant=savedVariant; lightboxStepWithin(dir); return;
+    }
+    pushHash(); renderScenes(); renderGallery();
+    const target=dir===1 ? nextIds[0] : nextIds[nextIds.length-1];
+    openLightbox(target); return;
   }
   lightboxStepWithin(dir);
 }
