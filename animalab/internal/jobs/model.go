@@ -123,6 +123,8 @@ type Output struct {
 	ElapsedMs int64 `json:"elapsed_ms"`
 	Deleted  bool   `json:"deleted,omitempty"`
 	Missing  bool   `json:"missing,omitempty"`
+	// BatchOutputs holds siblings when batch>1 (siblings _02..N). Primary stays in Output.
+	BatchOutputs []Output `json:"batch_outputs,omitempty"`
 }
 
 type Review struct {

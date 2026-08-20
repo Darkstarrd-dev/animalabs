@@ -23,6 +23,8 @@
       <button id="btnKill" class="btn-ghost" title="释放端口/清理幽灵进程">Kill</button>
       <button id="btnDelJob" class="btn-ghost" title="删除当前选中的包（含定义与图片）" aria-label="删除当前包">🗑 删除包</button>
       <button id="btnRun" class="btn" aria-label="运行当前批次">▶ 运行批次</button>
+      <button id="btnPause" class="btn-ghost" aria-label="暂停/继续" style="display:none">⏸ 暂停</button>
+      <button id="btnStop" class="btn-ghost" aria-label="停止当前批次" style="display:none">⏹ 停止</button>
       <button id="btnRerunGroup" class="btn" aria-label="重运行当前分组" style="display:none" disabled>↻ 重运行</button>
       <button id="btnQuit" class="btn-danger" title="关闭网页并停止后端服务">Quit</button>
     </div>
@@ -44,7 +46,7 @@
         <input id="inpCfg" class="ipt-num ipt-cfg" type="number" min="0" max="20" step="0.1" placeholder="—" title="覆盖计划的 cfg（留空跟随计划）">
       </label>
       <label class="hdr-field">Batch
-        <select id="selBatch" class="sel" title="每项一次批量出图的数量（1=单张，>1=同prompt一次出N张变体，速度更快）"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option></select>
+        <input id="inpBatch" class="ipt-num" type="number" min="1" max="8" step="1" placeholder="—" title="每项一次批量出图的数量（1=单张，>1=同prompt一次出N张变体，1-8任意值）" style="width:56px">
       </label>
       <label class="hdr-field">Sampler
         <select id="selSampler" class="sel"><option value="">—</option></select>

@@ -9,11 +9,10 @@
 - **Base**：适合显式 `style / composition / artist / tags`，你负责控制；LoRA 训练必须用 Base。
 - **Aesthetic 1.0/1.0b**：已审美微调，少堆“漂亮”类词，关注内容本身；`score_*` 可省。
 - **Aesthetic v1.1**：部分重训平滑风格、降伪影，适合长英文/复杂姿态/镜头/分镜绑定；作者建议 v1.0b 为通用默认，v1.1 用于上述复杂场景。
-- **Turbo**：蒸馏强默认风格，`CFG 1` + `8–12 steps`；本仓库 `anima_turboV10` 实测 `4–8 steps` 亦稳，单张约 1.5–2s（RTX 5090D）。
+- **Turbo**：蒸馏强默认风格，`CFG 1` + `8–12 steps`；本仓库 `anima_turboV10` 实测 `4–8 steps` 亦稳，单张约 1.5–2s（RTX 5090D）。**多样性最低**、精美收敛最强，需 `artist/语义块加权 2–3` 或切 Base 才能破。
 - **2.9B**：同 Base 提示词习惯，`year/highres` 仍强影响，短 prompt 差；实测 `euler + sgm-uniform` 均衡，`res-multistep + linear-quadratic` 更重高噪步、构图更好。
 
-建议同一 job 在 Base/Aesthetic/Turbo 上各跑一组对比（`turbo-compare.json` 已预留 sampler/cfg 对比思路；`cfg 2` 更锐待补图）。
-
+> **多样性实测 (2026-08-20)**：`(@artist:weight) + (重点形容词/语义块:weight)` 与 `Turbo → Base` 切换正交叠加：前者压制“精致/漂亮/干净”审美，后者抬高基线方差；Base 上同样权重更易出粗糙/怪诞/畸变，Turbo 上需 `2–3` 甚至更高才明显。详 `guides/02-grammar.md` 权重三类与强度曲线。
 ### 8.2 采样器与调度器（官方 + 2.9B + 实测）
 
 | 采样器 | 风格倾向 | 备注 |

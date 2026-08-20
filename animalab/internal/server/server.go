@@ -19,6 +19,13 @@ import (
 	"anima/internal/jobs"
 )
 
+type runState struct {
+	mu       sync.Mutex
+	paused   bool
+	stopped  bool
+	cancelFn context.CancelFunc
+}
+
 type Server struct {
 	Root        string
 	ComfyHost   string
@@ -26,9 +33,10 @@ type Server struct {
 	mu          sync.Mutex
 	running     map[string]bool
 	runningMu   sync.Mutex
+	runStates   map[string]*runState
+	runStatesMu sync.Mutex
 	comfyClient *comfy.Client
 }
-
 func New(root, comfyHost string) *Server {
 	if root == "" {
 		root = FindRoot()
@@ -44,6 +52,7 @@ func New(root, comfyHost string) *Server {
 		ComfyHost:   comfyHost,
 		Mux:         http.NewServeMux(),
 		running:     map[string]bool{},
+		runStates:   map[string]*runState{},
 		comfyClient: comfy.NewClient(comfyHost, filepath.Join(root, "Anime_Turbo_api.json")),
 	}
 	s.routes()
@@ -80,7 +89,6 @@ func FindRoot() string {
 	}
 	return cwd
 }
-
 func (s *Server) routes() {
 	s.Mux.HandleFunc("/", s.handleRoot)
 	s.Mux.HandleFunc("/web/", s.handleWeb)
@@ -92,6 +100,10 @@ func (s *Server) routes() {
 	s.Mux.HandleFunc("/api/review", s.handleReview)
 	s.Mux.HandleFunc("/api/delete", s.handleDelete)
 	s.Mux.HandleFunc("/api/run", s.handleRun)
+	s.Mux.HandleFunc("/api/run/pause", s.handleRunPause)
+	s.Mux.HandleFunc("/api/run/resume", s.handleRunResume)
+	s.Mux.HandleFunc("/api/run/stop", s.handleRunStop)
+	s.Mux.HandleFunc("/api/run/status", s.handleRunStatus)
 	s.Mux.HandleFunc("/api/export", s.handleExport)
 	s.Mux.HandleFunc("/api/presets", s.handlePresets)
 	s.Mux.HandleFunc("/api/meta", s.handleMeta)
@@ -318,6 +330,13 @@ func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {
 					j.Items[i].Output.Missing = true
 				}
 			}
+			for k, bo := range it.Output.BatchOutputs {
+				if bo.Deleted { continue }
+				sib := filepath.Join(s.Root, "output", date, strings.TrimSuffix(filepath.Base(clean), ".json"), bo.Filename)
+				if _, err := os.Stat(sib); err != nil {
+					j.Items[i].Output.BatchOutputs[k].Missing = true
+				}
+			}
 		}
 	}
 	writeJSON(w, 200, j)
@@ -434,7 +453,13 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 				if j.Items[i].Output != nil && j.Items[i].Output.Filename != "" {
 					imgPath := filepath.Join(s.Root, "output", req.Date, strings.TrimSuffix(req.Job, ".json"), j.Items[i].Output.Filename)
 					_ = os.Remove(imgPath)
+					for _, bo := range j.Items[i].Output.BatchOutputs {
+						_ = os.Remove(filepath.Join(s.Root, "output", req.Date, strings.TrimSuffix(req.Job, ".json"), bo.Filename))
+					}
 					j.Items[i].Output.Deleted = true
+					for k := range j.Items[i].Output.BatchOutputs {
+						j.Items[i].Output.BatchOutputs[k].Deleted = true
+					}
 				}
 				if j.Items[i].Review == nil {
 					j.Items[i].Review = &jobs.Review{}
@@ -543,13 +568,96 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	go s.runJob(date, jobName, force, hdrBody.Preset, hdrBody.UnetName, hdrBody.Loras, hdrBody.Steps, hdrBody.Cfg, hdrBody.Sampler, hdrBody.Scheduler, hdrBody.Batch, filterItems, group, subgroup)
 	writeJSON(w, 200, map[string]any{"started": true, "date": date, "job": jobName, "force": force, "preset": hdrBody.Preset, "unet_name": hdrBody.UnetName, "loras": hdrBody.Loras, "steps": hdrBody.Steps, "cfg": hdrBody.Cfg, "sampler": hdrBody.Sampler, "scheduler": hdrBody.Scheduler, "batch": hdrBody.Batch})
 }
+func parseRunKey(r *http.Request) (string, string) {
+	date := r.URL.Query().Get("date")
+	job := r.URL.Query().Get("job")
+	if date == "" || job == "" {
+		var body struct{ Date string `json:"date"`; Job string `json:"job"` }
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &body)
+		if date == "" { date = body.Date }
+		if job == "" { job = body.Job }
+	}
+	if job != "" && !strings.HasSuffix(job, ".json") { job += ".json" }
+	if date == "" || job == "" { return "", "" }
+	return date + "/" + job, job
+}
+func (s *Server) handleRunPause(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" { http.Error(w, "method not allowed", 405); return }
+	key, _ := parseRunKey(r)
+	if key == "" { writeJSON(w, 400, map[string]string{"error": "date and job required"}); return }
+	s.runStatesMu.Lock()
+	rs := s.runStates[key]
+	s.runStatesMu.Unlock()
+	if rs == nil { writeJSON(w, 404, map[string]string{"error": "not running"}); return }
+	rs.mu.Lock()
+	rs.paused = true
+	rs.mu.Unlock()
+	writeJSON(w, 200, map[string]any{"ok": true, "paused": true, "key": key})
+}
+func (s *Server) handleRunResume(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" { http.Error(w, "method not allowed", 405); return }
+	key, _ := parseRunKey(r)
+	if key == "" { writeJSON(w, 400, map[string]string{"error": "date and job required"}); return }
+	s.runStatesMu.Lock()
+	rs := s.runStates[key]
+	s.runStatesMu.Unlock()
+	if rs == nil { writeJSON(w, 404, map[string]string{"error": "not running"}); return }
+	rs.mu.Lock()
+	rs.paused = false
+	rs.mu.Unlock()
+	writeJSON(w, 200, map[string]any{"ok": true, "paused": false, "key": key})
+}
+func (s *Server) handleRunStop(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" { http.Error(w, "method not allowed", 405); return }
+	key, _ := parseRunKey(r)
+	if key == "" { writeJSON(w, 400, map[string]string{"error": "date and job required"}); return }
+	s.runStatesMu.Lock()
+	rs := s.runStates[key]
+	s.runStatesMu.Unlock()
+	if rs == nil { writeJSON(w, 404, map[string]string{"error": "not running"}); return }
+	rs.mu.Lock()
+	rs.stopped = true
+	rs.paused = false
+	if rs.cancelFn != nil { rs.cancelFn() }
+	rs.mu.Unlock()
+	writeJSON(w, 200, map[string]any{"ok": true, "stopped": true, "key": key})
+}
+func (s *Server) handleRunStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" { http.Error(w, "method not allowed", 405); return }
+	date := r.URL.Query().Get("date")
+	job := r.URL.Query().Get("job")
+	if job != "" && !strings.HasSuffix(job, ".json") { job += ".json" }
+	key := date + "/" + job
+	s.runningMu.Lock()
+	running := s.running[key]
+	s.runningMu.Unlock()
+	s.runStatesMu.Lock()
+	rs := s.runStates[key]
+	s.runStatesMu.Unlock()
+	paused, stopped := false, false
+	if rs != nil {
+		rs.mu.Lock()
+		paused = rs.paused
+		stopped = rs.stopped
+		rs.mu.Unlock()
+	}
+	writeJSON(w, 200, map[string]any{"running": running, "paused": paused, "stopped": stopped, "key": key})
+}
 
 func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet string, hdrLoras []jobs.LoraSlot, hdrSteps *int, hdrCfg *float64, hdrSampler, hdrScheduler string, hdrBatch *int, filterItems []string, filterGroup, filterSubgroup string) {
 	key := date + "/" + jobFile
+	s.runStatesMu.Lock()
+	rs := &runState{}
+	s.runStates[key] = rs
+	s.runStatesMu.Unlock()
 	defer func() {
 		s.runningMu.Lock()
 		delete(s.running, key)
 		s.runningMu.Unlock()
+		s.runStatesMu.Lock()
+		delete(s.runStates, key)
+		s.runStatesMu.Unlock()
 	}()
 	jobPath := filepath.Join(s.Root, "jobs", date, jobFile)
 	jobName := strings.TrimSuffix(jobFile, ".json")
@@ -611,6 +719,16 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 		// if nothing matched but force was implied, still run nothing rather than whole job
 	}
 	for _, idx := range indices {
+		// check stop/pause before next item
+		for {
+			rs.mu.Lock()
+			stopped := rs.stopped
+			paused := rs.paused
+			rs.mu.Unlock()
+			if stopped { return }
+			if !paused { break }
+			time.Sleep(300 * time.Millisecond)
+		}
 		// reload for resolve (handles warnings)
 		s.mu.Lock()
 		jCheck, _ := jobs.Load(jobPath)
@@ -694,8 +812,27 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 			Batch:     resolved.Batch,
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 190*time.Second)
+		rs.mu.Lock()
+		rs.cancelFn = cancel
+		stoppedEarly := rs.stopped
+		rs.mu.Unlock()
+		if stoppedEarly { cancel(); return }
 		result, err := s.comfyClient.Submit(ctx, req)
 		cancel()
+		rs.mu.Lock()
+		rs.cancelFn = nil
+		stopped2 := rs.stopped
+		rs.mu.Unlock()
+		if stopped2 {
+			s.mu.Lock()
+			j3, _ := jobs.Load(jobPath)
+			if j3.Items[idx].Status == "queued" {
+				j3.Items[idx].Status = "pending"
+				_ = jobs.AtomicSave(jobPath, j3)
+			}
+			s.mu.Unlock()
+			return
+		}
 		s.mu.Lock()
 		j3, _ := jobs.Load(jobPath)
 		if err != nil {
@@ -717,26 +854,36 @@ func (s *Server) runJob(date, jobFile string, force bool, hdrPreset, hdrUnet str
 			s.mu.Unlock()
 			continue
 		}
+		batchOuts := []jobs.Output{}
 		if len(result.Images) > 1 {
 			base := strings.TrimSuffix(filename, ".png")
 			for i, bi := range result.Images[1:] {
 				sibling := fmt.Sprintf("%s_%02d.png", base, i+2)
 				_ = os.WriteFile(filepath.Join(outDir, sibling), bi.Bytes, 0644)
+				sha2 := sha256.Sum256(bi.Bytes)
+				batchOuts = append(batchOuts, jobs.Output{Filename: sibling, W: bi.W, H: bi.H, Bytes: len(bi.Bytes), SHA16: hex.EncodeToString(sha2[:])[:16], PromptID: result.PromptID, ElapsedMs: result.ElapsedMs})
 			}
 		}
 		sha := sha256.Sum256(result.Bytes)
 		sha16 := hex.EncodeToString(sha[:])[:16]
+		// Mark siblings missing if files were cleaned externally
+		for i := range batchOuts {
+			if _, err := os.Stat(filepath.Join(outDir, batchOuts[i].Filename)); err != nil {
+				batchOuts[i].Missing = true
+			}
+		}
 		j3.Items[idx].Status = "done"
 		j3.Items[idx].Error = ""
 		j3.Items[idx].Warnings = resolved.Warnings
 		j3.Items[idx].Output = &jobs.Output{
-			Filename:  filename,
-			W:         result.W,
-			H:         result.H,
-			Bytes:     len(result.Bytes),
-			SHA16:     sha16,
-			PromptID:  result.PromptID,
-			ElapsedMs: result.ElapsedMs,
+			Filename:     filename,
+			W:            result.W,
+			H:            result.H,
+			Bytes:        len(result.Bytes),
+			SHA16:        sha16,
+			PromptID:     result.PromptID,
+			ElapsedMs:    result.ElapsedMs,
+			BatchOutputs: batchOuts,
 		}
 		_ = jobs.AtomicSave(jobPath, j3)
 		s.mu.Unlock()

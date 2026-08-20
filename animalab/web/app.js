@@ -14,9 +14,9 @@ let hdrUserEdited=false;
 function hdrKey(k){ return 'anima.hdr.'+k; }
 function saveHdr(){ try{ localStorage.setItem(hdrKey('preset'), state.preset||'turbo'); localStorage.setItem(hdrKey('unet'), state.unet||''); localStorage.setItem(hdrKey('lora1'), state.lora1||'off'); localStorage.setItem(hdrKey('lora2'), state.lora2||'off'); localStorage.setItem(hdrKey('lora3'), state.lora3||'off'); localStorage.setItem(hdrKey('wt1'), String(state.wt1)); localStorage.setItem(hdrKey('wt2'), String(state.wt2)); localStorage.setItem(hdrKey('wt3'), String(state.wt3)); localStorage.setItem(hdrKey('hdrSteps'), String(state.hdrSteps||'')); localStorage.setItem(hdrKey('hdrCfg'), String(state.hdrCfg||'')); localStorage.setItem(hdrKey('hdrSampler'), state.hdrSampler||''); localStorage.setItem(hdrKey('hdrScheduler'), state.hdrScheduler||''); localStorage.setItem(hdrKey('hdrBatch'), String(state.hdrBatch||'')); }catch(e){} }
 function loadHdr(){ try{ const p=localStorage.getItem(hdrKey('preset')); if(p) state.preset=p; state.unet=localStorage.getItem(hdrKey('unet'))||''; state.lora1=localStorage.getItem(hdrKey('lora1'))||'off'; state.lora2=localStorage.getItem(hdrKey('lora2'))||'off'; state.lora3=localStorage.getItem(hdrKey('lora3'))||'off'; const w1=localStorage.getItem(hdrKey('wt1')); const w2=localStorage.getItem(hdrKey('wt2')); const w3=localStorage.getItem(hdrKey('wt3')); if(w1!=null) state.wt1=parseFloat(w1)||0.8; if(w2!=null) state.wt2=parseFloat(w2)||1; if(w3!=null) state.wt3=parseFloat(w3)||1; const hs=localStorage.getItem(hdrKey('hdrSteps')); const hc=localStorage.getItem(hdrKey('hdrCfg')); const hsa=localStorage.getItem(hdrKey('hdrSampler')); const hsc=localStorage.getItem(hdrKey('hdrScheduler')); if(hs!=null) state.hdrSteps=hs||''; if(hc!=null) state.hdrCfg=hc||''; if(hsa!=null) state.hdrSampler=hsa||''; if(hsc!=null) state.hdrScheduler=hsc||''; }catch(e){} }
-function applyHdrToDOM(){ const s=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v; }; s('selPreset', state.preset||'turbo'); s('selUnet', state.unet||''); s('selLora1', state.lora1||'off'); s('selLora2', state.lora2||'off'); s('selLora3', state.lora3||'off'); s('wtLora1', state.wt1); s('wtLora2', state.wt2); s('wtLora3', state.wt3); s('inpSteps', state.hdrSteps||''); s('inpCfg', state.hdrCfg||''); s('selSampler', state.hdrSampler||''); s('selScheduler', state.hdrScheduler||''); s('selBatch', state.hdrBatch||''); syncLoraWtDisabled(); }
+function applyHdrToDOM(){ const s=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v; }; s('selPreset', state.preset||'turbo'); s('selUnet', state.unet||''); s('selLora1', state.lora1||'off'); s('selLora2', state.lora2||'off'); s('selLora3', state.lora3||'off'); s('wtLora1', state.wt1); s('wtLora2', state.wt2); s('wtLora3', state.wt3); s('inpSteps', state.hdrSteps||''); s('inpCfg', state.hdrCfg||''); s('selSampler', state.hdrSampler||''); s('selScheduler', state.hdrScheduler||''); s('inpBatch', state.hdrBatch||''); syncLoraWtDisabled(); }
 function syncLoraWtDisabled(){ [['selLora1','wtLora1'],['selLora2','wtLora2'],['selLora3','wtLora3']].forEach(function(pair){ const a=pair[0],b=pair[1]; const s=document.getElementById(a), w=document.getElementById(b); if(s&&w){ const off=!s.value||s.value==='off'; w.disabled=off; w.style.opacity=off?'.45':'1'; } }); }
-function buildHdrPayload(){ const loras=[]; [['lora1','wt1'],['lora2','wt2'],['lora3','wt3']].forEach(function(pair){ const k=pair[0],wk=pair[1]; const name=state[k]; if(name && name!=='off'){ let wt=parseFloat(state[wk]); if(!isFinite(wt)) wt=1; loras.push({name:name, weight:wt}); }}); const payload={preset:state.preset||'turbo', unet_name: state.unet||'', loras:loras}; const s=parseInt(state.hdrSteps,10); if(isFinite(s) && String(state.hdrSteps).trim()!=='') payload.steps=s; const c=parseFloat(state.hdrCfg); if(isFinite(c) && String(state.hdrCfg).trim()!=='') payload.cfg=c; if(state.hdrSampler && state.hdrSampler!=='') payload.sampler=state.hdrSampler; if(state.hdrScheduler && state.hdrScheduler!=='') payload.scheduler=state.hdrScheduler; const b=parseInt(state.hdrBatch,10); if(isFinite(b) && String(state.hdrBatch).trim()!=='' && b>=1){ payload.batch=b; } return payload; }
+function buildHdrPayload(){ const loras=[]; [['lora1','wt1'],['lora2','wt2'],['lora3','wt3']].forEach(function(pair){ const k=pair[0],wk=pair[1]; const name=state[k]; if(name && name!=='off'){ let wt=parseFloat(state[wk]); if(!isFinite(wt)) wt=1; loras.push({name:name, weight:wt}); }}); const payload={preset:state.preset||'turbo', unet_name: state.unet||'', loras:loras}; const s=parseInt(state.hdrSteps,10); if(isFinite(s) && String(state.hdrSteps).trim()!=='') payload.steps=s; const c=parseFloat(state.hdrCfg); if(isFinite(c) && String(state.hdrCfg).trim()!=='') payload.cfg=c; if(state.hdrSampler && state.hdrSampler!=='') payload.sampler=state.hdrSampler; if(state.hdrScheduler && state.hdrScheduler!=='') payload.scheduler=state.hdrScheduler; const b=parseInt(state.hdrBatch,10); if(isFinite(b) && String(state.hdrBatch).trim()!=='' && b>=1){ payload.batch=Math.max(1, Math.min(8, b)); } return payload; }
 async function fetchHdrMeta(){ try{ const r=await fetch('/api/meta'); if(!r.ok) return; const j=await r.json(); hdrMeta.unets=j.unets||[]; hdrMeta.loras=j.loras||[]; hdrMeta.samplers=j.samplers||['euler','euler_ancestral','heun','dpmpp_2m','dpmpp_sde','dpmpp_2m_sde','euler_cfg_pp','er_sde']; hdrMeta.schedulers=j.schedulers||['normal','karras','exponential','simple','sgm_uniform','beta','linear_quadratic']; populateHdrSelects(); }catch(e){} }
 function reflectHdrFromJob(j){
   if(!j || hdrUserEdited) return;
@@ -183,6 +183,7 @@ async function loadJob(date,job){
     if(state.scene && !scenes.find(s=> s.scene===state.scene)) { state.scene=''; state.variant=''; }
     renderScenes(); renderGallery(); updateKpi(); renderTree();
     if(state.item) openDrawer(state.item);
+    await syncRunStatus();
     startPolling();
   }catch(e){ console.error(e); }
 }
@@ -228,27 +229,17 @@ function buildScenes(job){
 function gcd(a,b){ for(;b;) { const t=b; b=a%b; a=t; } return a; }
 function latestGroup(){
   if(!state.curJob||!state.curJob.items) return null;
-  // find latest done by max output.elapsed? fallback to last done in display order
-  let best=null, bestScore=-1;
-  for(const it of state.curJob.items){
-    if(it.status!=='done'||!it.output) continue;
-    // use elapsed_ms if available, else use seed as tiebreaker? Use prompt_id numeric fallback
-    const score = it.output.elapsed_ms || 0;
-    // prefer larger elapsed? not chronological. Better use max index with higher file suffix? Use filename numeric?
-    // Use max done position in ordered display: higher index in OrderedIndices order is later executed? So later in file after sort?
-    // Approximate with max filename number
-    if(score>bestScore || (score===bestScore && (best==null || it.id>best.id))){
-      best=it; bestScore=score;
-    }
+  // newest done = last done in polling order; file scan shows actual newest is at higher indices after insertion
+  // Use array order: latest newlyDone is last in items with status done that has just transitioned
+  // To track across polls, remember last newlyDone ids
+  if(state._latestGroupId){
+    const it=state.curJob.items.find(x=> x.id===state._latestGroupId);
+    if(it && it.status==='done' && it.output) return { group: groupKey(it), subgroup: subgroupKey(it, state.curJob) || '__single__', id: it.id };
   }
-  // if no elapsed_ms distinctive, pick last done by array position (closest to latest execution tail)
-  if(!bestScore){
-    for(let i=state.curJob.items.length-1;i>=0;--i){ const it=state.curJob.items[i]; if(it.status==='done'&&it.output){ best=it; break; } }
-  }
-  if(!best) return null;
-  return { group: groupKey(best), subgroup: subgroupKey(best, state.curJob) || '__single__', id: best.id };
+  // fallback: most recent done by array tail (output files appended sequentially, indices grow with generation)
+  for(let i=state.curJob.items.length-1;i>=0;--i){ const it=state.curJob.items[i]; if(it.status==='done'&&it.output){ return { group: groupKey(it), subgroup: subgroupKey(it, state.curJob) || '__single__', id: it.id }; } }
+  return null;
 }
-
 function renderScenes(){
   const ul=$('#sceneList'); ul.innerHTML='';
   const sub=$('#sceneSub');
@@ -338,6 +329,11 @@ function matchesFilters(it){
   }
   return true;
 }
+function filteredDisplayItems(){
+  // gallery/lb should show batch siblings as independent cards
+  const base=filteredItems();
+  return expandedDisplayItems(base);
+}
 function filteredItems(){
   if(!state.curJob) return [];
   let items=[...state.curJob.items].filter(matchesFilters);
@@ -354,6 +350,37 @@ function filteredItems(){
     items.sort((a,b)=> String(a.id).localeCompare(String(b.id), undefined, {numeric:true}));
   }
   return items;
+}
+function expandedDisplayItems(baseItems){
+  const out=[];
+  for(const it of baseItems){
+    if(it.status==='done' && it.output && it.output.filename){
+      const urls=allImageUrls(it);
+      if(urls.length<=1){
+        out.push({...it, _displayId: it.id, _originalId: it.id, _displayUrl: urls[0]||imageUrl(it), _batchIndex:0, _batchTotal:1});
+      } else {
+        for(let i=0;i<urls.length;i++){
+          const bo = i===0 ? it.output : (it.output.batch_outputs||[])[i-1];
+          const fn = bo ? bo.filename : it.output.filename;
+          const w = bo ? bo.w : it.output.w;
+          const h = bo ? bo.h : it.output.h;
+          const displayId = i===0 ? it.id : `${it.id}__b${i+1}`;
+          out.push({...it, id: displayId, _originalId: it.id, _displayId: displayId, _displayUrl: urls[i], _batchIndex:i, _batchTotal:urls.length, _batchOutput: bo, output: {...it.output, filename: fn, w, h, bytes: bo?bo.bytes:it.output.bytes, sha16: bo?bo.sha16:it.output.sha16}});
+        }
+      }
+    } else {
+      out.push({...it, _displayId: it.id, _originalId: it.id, _displayUrl: imageUrl(it), _batchIndex:0, _batchTotal:1});
+    }
+  }
+  return out;
+}
+function allImageUrls(item){
+  if(!item.output||!item.output.filename) return [];
+  const base='/output/'+encodeURIComponent(state.date)+'/'+encodeURIComponent(state.curJob.job_id)+'/';
+  const urls=[base+encodeURIComponent(item.output.filename)];
+  const sibs=item.output.batch_outputs||[];
+  for(const bo of sibs){ if(bo.filename && !bo.deleted) urls.push(base+encodeURIComponent(bo.filename)); }
+  return urls;
 }
 function imageUrl(item){
   if(!item.output||!item.output.filename) return '';
@@ -391,25 +418,28 @@ function createCard(it){
   card.dataset.id=it.id;
   const ribbonText=status==='failed'?'失败': verdict==='kept'?'保留': verdict==='rejected'?'驳回':'未审核';
   const ribbonClass=status==='failed'?'failed': verdict;
-  const url=imageUrl(it);
-  const hasImg=!!url && status==='done' && !it.output.missing && !it.output.deleted;
-  const checked=selectedIds.has(it.id)?'checked':'';
+  const url=it._displayUrl || imageUrl(it);
+  const hasImg=!!url && status==='done' && !(it.output && it.output.missing) && !(it.output && it.output.deleted);
+  const checked=selectedIds.has(it._originalId||it.id)?'checked':'';
   const dims=it.output? `${it.output.w}×${it.output.h}` : (it.width||it.height? `${it.width||'—'}×${it.height||'—'}` : '');
+  const isBatchSibling = it._batchTotal>1;
+  const batchLabel = isBatchSibling ? ` · ${it._batchIndex+1}/${it._batchTotal}` : '';
   card.innerHTML=`
       <div class="card-media">
-        ${hasImg? `<img loading="lazy" src="${url}" alt="#${escapeHtml(it.id)}">` : `<div class="placeholder">${status==='failed'?'失败 · 查看错误': status==='pending'?'待生成 — 点运行批次': status==='queued'?'队列中': it.output&&it.output.missing?'图片缺失（output 已清理）': it.output&&it.output.deleted?'已删除': '无图 · 先运行批次'}</div>`}
+        ${hasImg? `<img loading="lazy" src="${url}" alt="#${escapeHtml(it._displayId||it.id)}">` : `<div class="placeholder">${status==='failed'?'失败 · 查看错误': status==='pending'?'待生成 — 点运行批次': status==='queued'?'队列中': it.output&&it.output.missing?'图片缺失（output 已清理）': it.output&&it.output.deleted?'已删除': '无图 · 先运行批次'}</div>`}
         <span class="ribbon ${ribbonClass}">${ribbonText}</span>
-        <label class="select-check" title="多选"><input type="checkbox" ${checked} data-check="${escapeHtml(it.id)}" aria-label="选择 ${escapeHtml(it.id)}"></label>
+        <label class="select-check" title="多选"><input type="checkbox" ${checked} data-check="${escapeHtml(it._originalId||it.id)}" aria-label="选择 ${escapeHtml(it._originalId||it.id)}"></label>
       </div>
       <div class="card-body">
-        <div class="card-title"><span>#${escapeHtml(it.id)}</span><span style="color:var(--muted);font:500 11px/1 Fira Code,monospace">${dims}</span></div>
+        <div class="card-title"><span>#${escapeHtml(it._displayId||it.id)}</span><span style="color:var(--muted);font:500 11px/1 Fira Code,monospace">${dims}${batchLabel}</span></div>
       </div>
       <div class="card-actions">
-        <button class="btn-ghost" data-act="kept" data-id="${escapeHtml(it.id)}" aria-label="保留 ${escapeHtml(it.id)}">✓ 保留</button>
-        <button class="btn-ghost" data-act="rejected" data-id="${escapeHtml(it.id)}" aria-label="驳回 ${escapeHtml(it.id)}">✕ 驳回</button>
+        <button class="btn-ghost" data-act="kept" data-id="${escapeHtml(it._originalId||it.id)}" aria-label="保留 ${escapeHtml(it.id)}">✓ 保留</button>
+        <button class="btn-ghost" data-act="rejected" data-id="${escapeHtml(it._originalId||it.id)}" aria-label="驳回 ${escapeHtml(it.id)}">✕ 驳回</button>
       </div>`;
-  const img=card.querySelector('img');
-  if(img){ img.addEventListener('click', ()=> openLightbox(it.id)); img.style.cursor='zoom-in'; }
+  const img=card.querySelector('.card-media img');
+  if(img){ img.addEventListener('click', ()=> openLightbox(it._displayId||it.id)); img.style.cursor='zoom-in'; }
+
   card.querySelectorAll('[data-act]').forEach(btn=>{
     btn.onclick=e=>{
       e.stopPropagation();
@@ -420,13 +450,13 @@ function createCard(it){
   const cb=card.querySelector('input[type=checkbox]');
   cb.addEventListener('change', ()=>{ if(cb.checked) selectedIds.add(it.id); else selectedIds.delete(it.id); updateBatchBar(); });
   card.tabIndex=0;
-  card.addEventListener('keydown', e=>{ if(e.key==='Enter') openLightbox(it.id); if(e.key===' '){ e.preventDefault(); cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); }});
+  card.addEventListener('keydown', e=>{ if(e.key==='Enter') openLightbox(it._displayId||it.id); if(e.key===' '){ e.preventDefault(); cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); }});
   return card;
 }
 function renderGallery(){
   const grid=$('#grid');
   if(!state.curJob){ clearGallery(); return; }
-  const items=filteredItems();
+  const items=filteredDisplayItems();
   $('#countInfo').textContent=`${items.length}/${state.curJob.items.length} · ${state.curJob.job_id} · ${state.date}${state.scene? ' · '+state.scene:''}`;
   const hint=$('#hint');
   if(state.curJob.items.length && items.length===0){
@@ -482,14 +512,15 @@ function applyIncrementalUpdate(prevJob, nextJob){
     if(p && p.status!==it.status && it.status==='done' && it.output && it.output.filename) newlyDone.push(it);
   }
   if(newlyDone.length){
-    // just re-render with diff (no full clear)
-    renderGallery();
+    const newest=newlyDone[newlyDone.length-1];
+    state._latestGroupId=newest.id;
+    renderGallery(); renderScenes();
     const first=newlyDone[0];
-    // subtle flash for new cards
     requestAnimationFrame(()=>{
       for(const it of newlyDone){
         const el=document.querySelector(`[data-id="${CSS.escape(it.id)}"]`);
         if(el){ el.style.outline='2px solid rgba(34,197,94,.6)'; setTimeout(()=> el.style.outline='', 1200); }
+        for(let k=2;k<=8;k++){ const sib=document.querySelector(`[data-id="${CSS.escape(it.id+'__b'+k)}"]`); if(sib){ sib.style.outline='2px solid rgba(34,197,94,.6)'; setTimeout(()=> sib.style.outline='', 1200); } }
       }
     });
     $('#status').textContent=`新增 ${newlyDone.length} 张 · ${first.id} …`;
@@ -502,8 +533,7 @@ function startPolling(){
   if(pollTimer) { clearInterval(pollTimer); pollTimer=null; }
   if(!state.date||!state.job) return;
   const checkPending=()=> state.curJob && state.curJob.items.some(x=> x.status==='pending'||x.status==='queued');
-  if(!checkPending()) return;
-  let prevSnapshot = JSON.parse(JSON.stringify(state.curJob));
+  if(!checkPending()) { updateRunControls(); return; }
   pollTimer=setInterval(async()=>{
     try{
       const j=await api('/api/job?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job));
@@ -512,8 +542,12 @@ function startPolling(){
       state.curJob=j;
       applyIncrementalUpdate(prev, j);
       updateKpi(); renderTree();
+      try{
+        const s=await api('/api/run/status?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job));
+        if(s.running){ runPaused=!!s.paused; updateRunControls(); if(s.paused) $('#status').textContent=`已暂停 · ${j.items.filter(x=> x.status==='pending'||x.status==='queued').length} 张待生成`; if(s.stopped) $('#status').textContent='已停止'; }
+      }catch(e){}
       const stillPending=j.items.some(x=> x.status==='pending'||x.status==='queued');
-      if(!stillPending){ clearInterval(pollTimer); pollTimer=null; $('#status').textContent='完成'; updateRerunBtn(); setTimeout(()=> $('#status').textContent='', 3000); }
+      if(!stillPending){ clearInterval(pollTimer); pollTimer=null; $('#status').textContent='完成'; updateRerunBtn(); updateRunControls(); setTimeout(()=> $('#status').textContent='', 3000); }
     }catch(e){ console.error(e); }
   }, 1500);
 }
@@ -544,7 +578,8 @@ async function doReview(id, verdict, reason, tags){
 
 // Drawer
 function openDrawer(id){
-  const it=state.curJob.items.find(x=>x.id===id);
+  // support batch siblings (__b suffix) via expanded display items
+  const it=findDisplayItem(id) || state.curJob.items.find(x=>x.id===id);
   if(!it) return;
   state.item=id; pushHash();
   const drawer=$('#drawer'); drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
@@ -562,10 +597,13 @@ function openDrawer(id){
   const tags=(it.review&&it.review.tags)||[];
   const reason=(it.review&&it.review.reason)||'';
   const out=it.output;
-  const url=imageUrl(it);
-  const hasImg=!!url && it.status==='done' && !it.output.missing && !it.output.deleted;
+  const urls=allImageUrls(it);
+  const url=it._displayUrl || imageUrl(it);
+  const hasImg=!!url && it.status==='done' && !(it.output && it.output.missing) && !(it.output && it.output.deleted);
+  const _drawerIsSibling = it._batchTotal>1;
+  const batchHtml = urls.length>1 ? `<div style="margin-top:8px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px">${urls.map((u,i)=>`<a href="${u}" target="_blank" rel="noopener" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#020617;display:block"><img src="${u}" style="width:100%;display:block;aspect-ratio:1/1;object-fit:contain;background:#020617" loading="lazy" alt="#${escapeHtml(id)} #${i+1}"><span style="display:block;text-align:center;font:600 11px/1 Fira Code,monospace;color:var(--muted);padding:4px">#${i+1}</span></a>`).join('')}</div>` : '';
   $('#drawerBody').innerHTML=`
-    ${hasImg? `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#020617"><img src="${url}" alt="#${escapeHtml(id)}" style="width:100%;display:block"></div>` : `<div class="empty" style="margin:0">${it.status==='failed'?'失败': it.status==='pending'?'待生成':'无图'}</div>`}
+    ${hasImg? `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#020617"><img src="${url}" alt="#${escapeHtml(it._displayId||id)}" style="width:100%;display:block">${_drawerIsSibling? `<span style="display:block;text-align:center;font:600 11px/1.4 Fira Code,monospace;color:var(--muted);padding:6px">batch ${it._batchIndex+1}/${it._batchTotal}</span>`:''}</div>` : `<div class="empty" style="margin:0">${it.status==='failed'?'失败': it.status==='pending'?'待生成':'无图'}</div>`}
     <div style="margin-top:12px" class="kv">
       <span>分组</span><span>${escapeHtml((it.group||it.scene)||'—')}</span>
       <span>子分组</span><span>${escapeHtml((it.subgroup||it.variant||subgroupKey(it, state.curJob))||'—')}</span>
@@ -628,7 +666,12 @@ function closeDrawer(){
 }
 
 // Lightbox - fullscreen with right drawer content, cross-scene navigation
-function visibleIds(){ return filteredItems().map(x=> x.id); }
+function findDisplayItem(id){
+  // id may be __b sibling; return expanded entry
+  const all=filteredDisplayItems();
+  return all.find(x=> x._displayId===id || x.id===id) || (state.curJob&&state.curJob.items.find(x=> x.id===id));
+}
+function visibleIds(){ return filteredDisplayItems().map(x=> x.id); }
 function orderedScenes(){ return (state.curJob&&state.curJob._scenes)||[]; }
 function lightboxStepWithin(dir){
   const ids=visibleIds(); if(!ids.length) return;
@@ -704,7 +747,7 @@ function lightboxStepScene(dir){
   if(ids.length) openLightbox(ids[0]);
 }
 function drawerInnerHtml(id){
-  const it=state.curJob.items.find(x=>x.id===id);
+  const it=findDisplayItem(id) || state.curJob.items.find(x=>x.id===id);
   if(!it) return '<div class="empty">无数据</div>';
   const jobDefaults=state.curJob.defaults||{};
   const w=it.width ?? jobDefaults.width ?? '—';
@@ -755,20 +798,33 @@ function drawerInnerHtml(id){
   `;
 }
 function openLightbox(id){
-  const it=state.curJob.items.find(x=>x.id===id); if(!it) return;
+  const it=findDisplayItem(id) || state.curJob.items.find(x=>x.id===id); if(!it) return;
   state.item=id; pushHash();
   const lb=$('#lightbox'); lb.classList.add('open');
-  const url=imageUrl(it);
+  const url=it._displayUrl || imageUrl(it);
   const img=$('#lbImg');
   if(url && it.status==='done' && !it.output.missing && !it.output.deleted){ img.src=url; img.style.display=''; img.alt='#'+id; }
   else { img.removeAttribute('src'); img.style.display='none'; }
+  const batchStrip = urls.length>1 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 10px 0 10px;padding:6px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.03)"><span style="font:700 11px/1.4 Fira Code,monospace;color:var(--muted);align-self:center">batch ×${urls.length}</span>${urls.map((u,i)=>`<button data-lb-batch="${i}" style="width:56px;height:56px;padding:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#020617;cursor:pointer;opacity:${i===0?.95:.7}" title="#${i+1}"><img src="${u}" style="width:100%;height:100%;object-fit:cover;display:block"></button>`).join('')}</div>` : '';
+  let stripEl=document.getElementById('lbBatchStrip');
+  if(!stripEl){
+    stripEl=document.createElement('div'); stripEl.id='lbBatchStrip';
+    stripEl.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:2';
+    document.getElementById('lbMedia').appendChild(stripEl);
+  }
+  stripEl.innerHTML = urls.length>1 ? batchStrip : '';
+  if(urls.length>1){
+    stripEl.querySelectorAll('[data-lb-batch]').forEach(btn=>{
+      btn.onclick=()=>{ const i=parseInt(btn.getAttribute('data-lb-batch'),10); const u=urls[i]; if(u){ img.src=u; stripEl.querySelectorAll('[data-lb-batch]').forEach(b=> b.style.opacity='.7'); btn.style.opacity='1'; } };
+    });
+  }
   const meta=$('#lbMeta');
   const verdict=(it.review&&it.review.verdict)||'unreviewed';
   const ids=visibleIds(); const pos=ids.indexOf(id)+1;
   const tags=(it.review&&it.review.tags)||[];
   meta.innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <h3 style="margin:0">#${escapeHtml(id)} <span style="color:var(--muted);font:500 12px/1 Fira Code,monospace">${escapeHtml(it.status)} · ${escapeHtml(verdict)} · ${pos}/${ids.length}</span></h3>
+      <h3 style="margin:0">#${escapeHtml(id)} <span style="color:var(--muted);font:500 12px/1 Fira Code,monospace">${escapeHtml(it.status)} · ${escapeHtml(verdict)} · ${pos}/${ids.length}${it._batchTotal>1? ` · ${it._batchIndex+1}/${it._batchTotal}`:''}</span></h3>
       <span style="margin-left:auto;display:flex;gap:6px">
         <button class="btn-ghost btn-sm" id="lbScenePrev" title="上一场景">▲ 场景</button>
         <button class="btn-ghost btn-sm" id="lbSceneNext" title="下一场景">▼ 场景</button>
@@ -858,8 +914,6 @@ document.getElementById('btnDelJob').addEventListener('click', async()=>{
     state.job=''; state.scene=''; state.variant=''; state.curJob=null;
     selectedIds.clear(); clearGallery();
     await loadDates();
-fetchHdrMeta().then(function(){ applyHdrToDOM(); });
-applyHdrToDOM();
     pushHash(); renderTree(); renderScenes(); updateDelBtn();
   }catch(err){ alert('删除失败: '+(err&&err.message||err)); }
   finally{ if(btn){ btn.disabled=!state.date||!state.job; btn.textContent=prev||'🗑 删除包'; } }
@@ -876,7 +930,41 @@ $('#batchKept').addEventListener('click', async()=>{ for(const id of [...selecte
 $('#batchRejected').addEventListener('click', async()=>{ for(const id of [...selectedIds]) await doReview(id,'rejected','',''); selectedIds.clear(); renderGallery(); });
 $('#batchClear').addEventListener('click', ()=>{ selectedIds.clear(); renderGallery(); });
 
-// Run / Kill / Quit
+// Run / Pause / Stop / Kill / Quit
+let serverRunning=false;
+let runPaused=false;
+async function syncRunStatus(){
+  if(!state.date||!state.job){ serverRunning=false; runPaused=false; updateRunControls(); return; }
+  try{
+    const j=await api('/api/run/status?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job));
+    serverRunning=!!j.running; runPaused=!!j.paused;
+  }catch(e){ serverRunning=false; }
+  updateRunControls();
+}
+function updateRunControls(){
+  const running = serverRunning;
+  const btnRun=$('#btnRun'), btnPause=$('#btnPause'), btnStop=$('#btnStop');
+  if(!btnRun||!btnPause||!btnStop) return;
+  if(running){
+    btnRun.style.display='none';
+    btnPause.style.display='';
+    btnStop.style.display='';
+    btnPause.textContent = runPaused ? '▶ 继续' : '⏸ 暂停';
+    btnPause.title = runPaused ? '继续批次' : '暂停（完成当前张后暂停）';
+  } else {
+    btnRun.style.display='';
+    btnPause.style.display='none';
+    btnStop.style.display='none';
+    btnRun.disabled=false; btnRun.textContent='▶ 运行批次';
+    runPaused=false;
+  }
+}
+async function runApi(path){
+  if(!state.date||!state.job) throw new Error('no job selected');
+  const res=await fetch('/api/run/'+path+'?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job),{method:'POST'});
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 $('#btnRun').addEventListener('click', async()=>{
   if(!state.date||!state.job){ alert('先选择左侧树中的批次包'); return; }
   const btn=$('#btnRun'); btn.disabled=true; const prev=btn.textContent; btn.textContent='运行中…';
@@ -886,16 +974,58 @@ $('#btnRun').addEventListener('click', async()=>{
     const res=await fetch('/api/run?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job),{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(hdr)});
     if(res.status===409){ alert('该批次已在运行中'); return; }
     if(!res.ok) throw new Error(await res.text());
+    serverRunning=true; runPaused=false;
+    updateRunControls();
     startPolling();
     let tries=0;
     const timer=setInterval(async()=>{
       tries++;
+      try{
+        const s=await api('/api/run/status?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job));
+        serverRunning=!!s.running; runPaused=!!s.paused;
+        updateRunControls();
+        if(s.stopped || !s.running){ clearInterval(timer); if(s.stopped) $('#status').textContent='已停止'; updateRunControls(); }
+      }catch(e){}
       const pending=state.curJob? state.curJob.items.filter(x=> x.status==='pending'||x.status==='queued').length : 0;
-      $('#status').textContent= pending? `生成中… 剩余 ${pending}` : '完成';
-      if(pending===0 || tries>120){ clearInterval(timer); btn.disabled=false; btn.textContent=prev; setTimeout(()=> $('#status').textContent='', 3000); }
-    }, 2000);
+      if(!runPaused) $('#status').textContent= pending? `生成中… 剩余 ${pending}` : '完成';
+      else $('#status').textContent= `已暂停 · 剩余 ${pending} · 点 继续 恢复`;
+      if(pending===0 || tries>240){ clearInterval(timer); serverRunning=false; btn.disabled=false; btn.textContent=prev; updateRunControls(); setTimeout(()=> $('#status').textContent='', 3000); }
+    }, 1500);
   }catch(e){ alert('触发失败: '+e.message); }
-  finally{ if(btn.disabled) setTimeout(()=>{ btn.disabled=false; btn.textContent=prev; }, 800); }
+  finally{ if(btn.disabled) setTimeout(()=>{ btn.disabled=false; btn.textContent=prev; updateRunControls(); }, 800); }
+});
+$('#btnPause').addEventListener('click', async()=>{
+  if(!state.date||!state.job) return;
+  const btn=$('#btnPause'); const wasPaused=runPaused;
+  btn.disabled=true;
+  try{
+    if(!wasPaused){
+      await runApi('pause');
+      runPaused=true;
+      $('#status').textContent='暂停中（完成当前张后暂停）…';
+    } else {
+      await runApi('resume');
+      runPaused=false;
+      $('#status').textContent='已继续…';
+    }
+    updateRunControls();
+  }catch(e){ alert((wasPaused?'继续':'暂停')+'失败: '+e.message); }
+  finally{ btn.disabled=false; updateRunControls(); }
+});
+$('#btnStop').addEventListener('click', async()=>{
+  if(!state.date||!state.job) return;
+  if(!confirm('停止当前批次？正在生成的图片会尝试中断，剩余 pending 保留。')) return;
+  const btn=$('#btnStop'); btn.disabled=true;
+  try{
+    await runApi('stop');
+    serverRunning=false; runPaused=false;
+    $('#status').textContent='已停止';
+    updateRunControls();
+    // re-sync after stop to ensure server cleared running flag; poll will also confirm
+    setTimeout(()=> syncRunStatus(), 400);
+    setTimeout(()=> syncRunStatus(), 1200);
+  }catch(e){ alert('停止失败: '+e.message); }
+  finally{ btn.disabled=false; updateRunControls(); }
 });
 $('#btnKill').addEventListener('click', async()=>{
   if(!confirm('释放端口并清理 anima 幽灵进程？（kill :8765 + anima.exe）')) return;
@@ -916,14 +1046,20 @@ $('#btnRerunGroup').addEventListener('click', async()=>{
     const res=await fetch('/api/run?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job),{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(hdr)});
     if(res.status===409){ alert('该批次已在运行中（全批或该分组）'); return; }
     if(!res.ok) throw new Error(await res.text());
-    startPolling();
+    serverRunning=true; runPaused=false; updateRunControls(); startPolling();
     let tries=0;
     const timer=setInterval(async()=>{
       tries++;
+      try{
+        const s=await api('/api/run/status?date='+encodeURIComponent(state.date)+'&job='+encodeURIComponent(state.job));
+        runPaused=!!s.paused; updateRunControls();
+        if(s.stopped){ clearInterval(timer); $('#status').textContent='已停止'; updateRunControls(); }
+      }catch(e){}
       const pending=state.curJob? state.curJob.items.filter(x=> x.status==='pending'||x.status==='queued').length : 0;
-      $('#status').textContent= pending? `重运行中… 剩余 ${pending}` : '重运行完成';
-      if(pending===0 || tries>120){ clearInterval(timer); btn.disabled=false; btn.textContent=prev; updateRerunBtn(); setTimeout(()=> $('#status').textContent='', 3000); }
-    }, 2000);
+      if(!runPaused) $('#status').textContent= pending? `重运行中… 剩余 ${pending}` : '重运行完成';
+      else $('#status').textContent=`已暂停 · 剩余 ${pending}`;
+      if(pending===0 || tries>240){ clearInterval(timer); serverRunning=false; btn.disabled=false; btn.textContent=prev; updateRerunBtn(); updateRunControls(); setTimeout(()=> $('#status').textContent='', 3000); }
+    }, 1500);
   }catch(e){ alert('重运行失败: '+e.message); btn.disabled=false; btn.textContent=prev; updateRerunBtn(); }
 });
 $('#btnQuit').addEventListener('click', async()=>{
@@ -959,7 +1095,7 @@ let _hdrReflectedJobKey='';
   bind('inpCfg','hdrCfg',false);
   bind('selSampler','hdrSampler',false);
   bind('selScheduler','hdrScheduler',false);
-  bind('selBatch','hdrBatch',false);
+  bind('inpBatch','hdrBatch',false);
 })();
 
 // Init

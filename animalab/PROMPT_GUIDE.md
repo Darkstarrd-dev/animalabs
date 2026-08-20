@@ -180,6 +180,23 @@
 | `@wlop / @fkey / @jima / @ciloranko / @ask_ \(askzy\) / @nardack / @kantoku` | 强（分布偏移） | 原作偏离 | 单角色+单 artist |  |
 | `deviantart / ye-pop` | 弱（数据集锚） | 风格偏移 | 仅高级多样性需要 |  |
 
+#### 11.8.1 诡异/破精美 artist 矩阵（实测 2026-08-20 · 多样性/抗精美 | 详 guides/10-cookbook.md §11.8.1）
+
+| @artist | 视觉倾向 | 效果 | 注意 | 推荐度 | 权重起点 |
+|---|---|---|---|---|---|
+| `@q hayashida` | 粗糙/脏/怪/荒诞/粗线涂抹+怪物+不正常比例 | 脏粗荒诞漫画感，最能压精美 | 首选，保留搞笑感 | ⭐⭐⭐⭐⭐ | `(@q hayashida:2)` |
+| `@hideshi hino` | 扭曲比例/病态童话/重黑白/怪脸 | 极端怪 | 易滑向恐怖非搞笑 | ⭐⭐⭐⭐⭐ | `(@hideshi hino:2)` |
+| `@shintaro kago` | grotesque/absurd/变形/黑色幽默 | 荒诞变形神经质 | 避免再加 horror/gore | ⭐⭐⭐⭐⭐ | `(@shintaro kago:1.8)` |
+| `@james ensor` | 面具/骷髅/怪人/狂欢荒诞 | 狂欢怪人荒诞 | 可能“疯狂彩虹狂欢猫” | ⭐⭐⭐⭐⭐ | `(@james ensor:1.8)` |
+| `@francis bacon` | 扭曲形体+丑陋肉感+畸形 | 变形肉感丑陋 | 非恐怖而是 fleshy 畸变 | ⭐⭐⭐⭐ | `(@francis bacon:2)` |
+| `@george grosz` | caricature/丑脸/夸张/讽刺 | 漫画化丑陋讽刺 | 比二次元更能压美型 | ⭐⭐⭐⭐ | `(@george grosz:2)` |
+| `@otto dix` | 畸形脸/老人/怪形象 | 老人怪脸畸形特化“老” | 拉暗沧桑，rainbow 后置加权 | ⭐⭐⭐⭐ | `(@otto dix:2)` |
+| `@hieronymus bosch` | 荒诞生物/不合理拼合/梦境怪物 | 怪物异形梦境 | 最极端易过 wild | ⭐⭐⭐⭐ | `(@hieronymus bosch:1.5)` |
+| `@junji ito` | uncanny/disturbing/abnormal | 不安恐怖异常 | 易变恐怖猫，A/B 用 | ⭐⭐⭐ | `(@junji ito:1.5)` |
+| `@suehiro maruo` | 复古诡异/颓废/马戏畸形 | 复古黑暗怪美 | 易暗，需补 rainbow 权重 | ⭐⭐⭐ | `(@suehiro maruo:1.5)` |
+| `@francisco goya` | 老/疲惫/阴郁荒诞 | 阴暗衰老怪诞 | 压暗，rainbow 放 artist 后 | ⭐⭐⭐ | `(@francisco goya:1.5)` |
+
+> **破精美协议**：单 artist 逐级 `1.0→1.5→2.0→2.5→3.0` 隔离测临界点；禁 5 artist 混塞（至多 `@a, (@b:weight)`）；语义块加权优于堆同义词如 `(entire body covered in vivid rainbow-colored fur:2.5)`；Turbo→Base 切档正交叠加（同权重 Base 更易畸变）；顺序 `quality/meta→count→character→series→@artist→外观`；先攻 `@q hayashida / @james ensor / @francis bacon`。训练含 Danbooru artist + LAION-POP/DeviantArt，`@` 缺省近无效，权重需 2–3。详 `guides/02-grammar.md` 权重三类与 `01-model/08-variant-sampler` 多样性结论。
 ### 11.9 元数据
 
 | Tag | 强度 | 副作用 | 推荐组合 | 样图 |
@@ -305,7 +322,7 @@ worst quality, low quality, blurry, text, watermark
 | 2026-08-20 | Header 分组重跑 + base 可用化 | `base` 缺文件对齐到 `fnMixAnimaTurbo_baseNoTurbo`；`fetchHdrMeta` 初始化链修复；`handleRun/post` 支持 `group/subgroup/items` 入参并自动 force，重跑仅替分组；暴露 `GET /api/presets·/api/meta` | `verify-turbo/base/base-lora` 与 `rerun-group-test2` 全 `done`（分组替前后 sha 对比） | — |
 | 2026-08-20 | Header 二行重构 + 下拉深色 + 采样覆盖 | 顶栏 `min-height→column(主/控两行)`，`option{background:var(--panel)}`；新增 `Steps/CFG/Batch/Sampler/Scheduler` 二排 Header，二排 `GET /api/meta.samplers/schedulers` 44/9 种，`reflectHdrFromJob` 计划↔Header 联动，`hdrUserEdited` 避覆 | `go vet/appcheck/build 6.9MB init` | — |
 | 2026-08-20 | 缩略图保持比例 + batch 吞吐开关 | `card-media img{width/height:100%;object-fit:contain}` 字母箱不裁；新增 `batch(60:28 batch_size)` Header 可选覆盖，`Submit/Images batch` + `siblings _02..` 单项批落 `N` 张；50 项实测单↔批 `4×单 18.4s vs batch4 4.7s(3.95×)`，512×512 `batch2 1.75s/张 / batch4 0.98s/张 / batch8 0.69s/张` | `verify-real-batch batch4 → b1(_02.._04).png` 4 档落盘，`dry-run --batch 4` 行可见 `batch=4` | — |
-|  |  |  |  |  |
+| 2026-08-20 | 多样性-破精美：artist/语义块加权 + 切 Base | 结论：`(@artist:weight)` + 重点形容词/语义块 `(concept:weight)` 加权，配合从高度美化的 Turbo/Aesthetic 切官方更泛用的 Base，可显著提升多样性、压制 Anima 默认“精致/漂亮/干净”审美；artist 需 `@` 在括号内如 `(@q hayashida:2)`，普通 tag/自然语言块同理 `(rainbow fur:2.5)` / `(entire body covered in rainbow fur:2.5)`；Qwen 编码器权重非线性，需比 SDXL 更高：`1.1≈无感 / 1.3仍弱 / 1.5起效 / 2.0明显 / 2-3为常用区间`，过高崩坏；单 artist 逐级 `1.0→1.5→2.0→2.5→3.0` 隔离测试优于混 5 个 artist 或堆 ugly/weird 同义词 | grotesque 候选见 §11.8/cookbook 矩阵（Q Hayashida / Hideshi Hino / Shintaro Kago / James Ensor / Francis Bacon 等）；rainbow 全身覆盖以语义块加权比堆同义词有效 | — |
 |  |  |  |  |  |
 
 > 新增时请贴 `job: id` 与 `export` 的 `kept/rejected + tags` 分布，以便下一轮复用。
