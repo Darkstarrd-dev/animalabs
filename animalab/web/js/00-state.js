@@ -7,7 +7,11 @@ let selectedIds = new Set();
 let monthCollapsed = new Set();
 let dayCollapsed = new Set();
 let sceneCollapsed = new Set();
-let pollTimer = null;
 let treeCollapsed = localStorage.getItem('anima.treeCollapsed')==='1';
+let controlsCollapsed = localStorage.getItem('anima.controlsCollapsed')==='1';
+let galleryFixedCollapsed = localStorage.getItem('anima.galleryFixedCollapsed')==='1';
+let pollTimer = null;
+// thumbnail keyboard focus: null=batch模式, 非null=单图模式 (+/- 针对单图)
+let focusedThumbId = null;
 let hdrMeta={unets:[],loras:[],samplers:[],schedulers:[]};
 let hdrUserEdited=false;

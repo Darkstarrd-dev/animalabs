@@ -18,6 +18,11 @@
       </div>
     </div>
     <div class="actions" role="toolbar" aria-label="全局操作">
+      <span class="hdr-toggles" role="group" aria-label="收起/展开">
+        <button id="btnToggleControls" class="btn-ghost btn-sm" title="收起/展开采样参数（第二排）" aria-label="收起采样参数" aria-pressed="false">▾ 参数</button>
+        <button id="btnToggleGalleryFixed" class="btn-ghost btn-sm" title="收起/展开概览与筛选（KPI+工具栏）" aria-label="收起概览与筛选" aria-pressed="false">▾ 概览</button>
+      </span>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px" aria-hidden="true"></span>
       <span id="livePill" class="pill live" title="服务在线">● LIVE</span>
       <span id="status" class="pill" aria-live="polite"></span>
       <button id="btnKill" class="btn-ghost" title="释放端口/清理幽灵进程">Kill</button>
@@ -152,7 +157,7 @@
         <input id="thumbSlider" type="range" min="220" max="500" step="10" value="260" aria-label="缩略图大小">
         <span id="thumbVal" class="zoom-val">260px</span>
       </div>
-      <span id="countInfo" style="color:var(--muted);font:500 12px/1 Fira Code, monospace;margin-left:auto" aria-live="polite"></span>
+      <span id="thumbFocusHint" class="pill" style="display:none;margin-left:auto" title="当前焦点：组批量或单图">○ 组</span><span id="countInfo" style="color:var(--muted);font:500 12px/1 Fira Code, monospace;margin-left:8px" aria-live="polite"></span>
     </div>
 
     <div id="batchBar" class="batchbar" style="display:none" aria-live="polite">

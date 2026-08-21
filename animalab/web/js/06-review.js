@@ -22,6 +22,8 @@ async function doReview(id, verdict, reason, tags){
     const res=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(!res.ok) throw new Error(await res.text());
     await res.json();
+    // optimistic ribbon patch before reload (so thumb feedback instant even if loadJob transiently fails)
+    try{ const _cards=document.querySelectorAll('.card[data-id="'+CSS.escape(backendId)+'"], .card[data-id^="'+CSS.escape(backendId)+'__b"]'); for(const c of _cards){ const r=c.querySelector('.ribbon'); if(r){ const wantVerdict=payload.verdict; r.className='ribbon '+(wantVerdict==='rejected'?'rejected':wantVerdict==='kept'?'kept':'unreviewed'); r.textContent=wantVerdict==='kept'?'保留':wantVerdict==='rejected'?'驳回':'未审核'; c.classList.remove('kept','rejected'); if(wantVerdict==='kept') c.classList.add('kept'); if(wantVerdict==='rejected') c.classList.add('rejected'); } } }catch(_){}
     await loadJob(state.date, state.curJob.job_id);
     if(!state._suppressDrawer && document.getElementById('lightbox').classList.contains('open') && (_displayId===state.item || backendId===state.item || _displayId.split('__b')[0]===state.item.split('__b')[0])) openLightbox(state.item);
   }catch(e){ alert('标注失败: '+e.message); }

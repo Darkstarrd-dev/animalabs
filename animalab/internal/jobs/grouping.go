@@ -1,10 +1,79 @@
 package jobs
 
 import (
-	"fmt"
-	"sort"
-	"strings"
+       "fmt"
+       "sort"
+       "strings"
 )
+
+// nine-grid ring order: character at 5, counterclockwise 2→3→6→9→8→7→4→1 (front start)
+var angleRingOrder = []string{
+       "front",
+       "front-right-45",
+       "right",
+       "behind-right-135",
+       "behind",
+       "behind-left-135",
+       "left",
+       "front-left-45",
+}
+
+var angleRank = func() map[string]int {
+       m := map[string]int{}
+       for i, s := range angleRingOrder {
+               m[s] = i
+       }
+       return m
+}()
+
+// framing display order: close → far
+var framingOrder = []string{"head", "bust", "half", "cowboy", "full"}
+
+var framingRank = func() map[string]int {
+       m := map[string]int{}
+       for i, s := range framingOrder {
+               m[s] = i
+       }
+       return m
+}()
+
+func rankAngle(s string) (int, bool) {
+       r, ok := angleRank[s]
+       return r, ok
+}
+
+func rankFraming(s string) (int, bool) {
+       r, ok := framingRank[s]
+       return r, ok
+}
+
+func sortGroupsRing(order []string) {
+       sort.Slice(order, func(a, b int) bool {
+               ra, oka := rankAngle(order[a])
+               rb, okb := rankAngle(order[b])
+               if oka && okb {
+                       return ra < rb
+               }
+               if oka != okb {
+                       return oka // known angles first
+               }
+               return order[a] < order[b]
+       })
+}
+
+func sortFramingsRing(keys []string) {
+       sort.Slice(keys, func(a, b int) bool {
+               ra, oka := rankFraming(keys[a])
+               rb, okb := rankFraming(keys[b])
+               if oka && okb {
+                       return ra < rb
+               }
+               if oka != okb {
+                       return oka
+               }
+               return keys[a] < keys[b]
+       })
+}
 
 func OrderedIndices(j *Job, force bool) []int {
 	type gInfo struct {
@@ -32,13 +101,7 @@ func OrderedIndices(j *Job, force bool) []int {
 		}
 		by[gk].variants[sk]++
 	}
-	for i := 0; i < len(order); i++ {
-		for k := i + 1; k < len(order); k++ {
-			if order[k] < order[i] {
-				order[i], order[k] = order[k], order[i]
-			}
-		}
-	}
+       sortGroupsRing(order)
 	if len(order) > 1 {
 		for i, s := range order {
 			if s == "__default__" {
@@ -55,13 +118,7 @@ func OrderedIndices(j *Job, force bool) []int {
 		for k := range gi.variants {
 			skeys = append(skeys, k)
 		}
-		for i := 0; i < len(skeys); i++ {
-			for k := i + 1; k < len(skeys); k++ {
-				if skeys[k] < skeys[i] {
-					skeys[i], skeys[k] = skeys[k], skeys[i]
-				}
-			}
-		}
+		sortFramingsRing(skeys)
 		for _, sk := range skeys {
 			var bucket []int
 			for _, idx := range gi.items {
@@ -179,7 +236,7 @@ func GroupByScene(j *Job) []SceneGroup {
 		}
 		g.Variants[sk]++
 	}
-	sort.Strings(order)
+	sortGroupsRing(order)
 	if len(order) > 1 {
 		for i, s := range order {
 			if s == "__default__" {

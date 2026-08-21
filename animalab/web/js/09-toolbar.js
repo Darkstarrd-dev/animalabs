@@ -1,4 +1,64 @@
 // Tree toggle + Toolbar
+
+// Batch thumb count
+function batchThumbIds(){
+  if(!state.curJob||!state.scene) return [];
+  const all = state.curJob.items||[];
+  if(state.variant){
+    return all.filter(it=> groupKey(it)===state.scene && (subgroupKey(it, state.curJob)||'')===state.variant).map(it=> it.id);
+  }
+  return all.filter(it=> groupKey(it)===state.scene).map(it=> it.id);
+}
+function getVerdict(id){
+  const it = state.curJob && state.curJob.items.find(x=> x.id===id);
+  if(!it) return 'unreviewed';
+  return (it.review&&it.review.verdict)||'unreviewed';
+}
+async function handlePlusMinusSingle(id, want){
+  if(!id || !state.curJob) return;
+  const cur = getVerdict(id);
+  if(cur==='unreviewed'){
+    state._suppressDrawer=true; await doReview(id, want, '', []); state._suppressDrawer=false;
+    return;
+  }
+  if(cur===want){
+    // same verdict already -> prompt for reason note
+    const it = state.curJob.items.find(x=> x.id===id);
+    const prevReason = (it&&it.review&&it.review.reason)||'';
+    const note = prompt(want==='kept' ? '该图已是【保留】，再次按 + 请补充备注：' : '该图已是【驳回】，再次按 - 请补充备注：', prevReason);
+    if(note===null) return;
+    state._suppressDrawer=true; await doReview(id, want, note, (it&&it.review&&it.review.tags)||[]); state._suppressDrawer=false;
+  } else {
+    // flip: kept->rejected or rejected->kept, no prompt, direct switch
+    state._suppressDrawer=true; await doReview(id, want, '', []); state._suppressDrawer=false;
+  }
+}
+async function handlePlusMinusBatch(want){
+  const ids = batchThumbIds();
+  if(!ids.length) return;
+  // Determine batch state: check if all share same verdict?
+  // We'll apply per-item logic: if item already at want -> prompt per batch? spec says batch level, but repeat should prompt.
+  // For batch, we treat as: if any item differs, batch flip to want without prompt; if all already at want, prompt once for batch note.
+  let allSame = ids.every(id=> getVerdict(id)===want);
+  if(allSame){
+    const note = prompt(want==='kept' ? `该二级分组已全部【保留】(${ids.length}张)，再次按 + 请补充备注：` : `该二级分组已全部【驳回】(${ids.length}张)，再次按 - 请补充备注：`, '');
+    if(note===null) return;
+    // apply note to each
+    state._suppressDrawer=true;
+    try{ document.getElementById('status').textContent=`批量备注 ${want==='kept'?'保留':'驳回'} ${ids.length} 项…`; for(const id of ids){ try{ await doReview(id, want, note, []); }catch{} } document.getElementById('status').textContent=`已备注 ${ids.length} 项`; } finally{ state._suppressDrawer=false; setTimeout(()=> document.getElementById('status').textContent='', 800); closeDrawer(); }
+    return;
+  }
+  // not all same: flip each to want
+  state._suppressDrawer=true;
+  try{ document.getElementById('status').textContent=`批量${want==='kept'?'保留':'驳回'} ${ids.length} 项…`; for(const id of ids){ try{
+    const cur=getVerdict(id);
+    if(cur===want) continue; // keep same-reason items skip unless they were unreviewed? actually unreviewed->want
+    // For items opposite, switch without prompt
+    // For unreviewed, just set
+    await doReview(id, want, '', []);
+  }catch{} } document.getElementById('status').textContent=`已${want==='kept'?'保留':'驳回'} ${ids.length} 项`; } finally{ state._suppressDrawer=false; setTimeout(()=>{ closeDrawer(); const s=document.getElementById('status'); if(s && (s.textContent.includes('保留')||s.textContent.includes('驳回'))) s.textContent=''; }, 600); }
+}
+
 function applyTreeCollapsed(){
   const lay=$('#layout');
   if(treeCollapsed) lay.classList.add('tree-collapsed'); else lay.classList.remove('tree-collapsed');
@@ -20,28 +80,51 @@ $('#lightbox').addEventListener('wheel', e=>{ e.stopPropagation(); }, {passive:f
 $('#lbPrev').addEventListener('click', e=>{ e.stopPropagation(); lightboxStep(-1); });
 $('#lbNext').addEventListener('click', e=>{ e.stopPropagation(); lightboxStep(1); });
 document.addEventListener('keydown', e=>{
-  // F: toggle lightbox for selected item (non-typing contexts)
-  const _tag=(e.target&&e.target.tagName)||''; const _typing=_tag==='INPUT'||_tag==='TEXTAREA'||_tag==='SELECT'||(e.target&&e.target.isContentEditable);
-  if(!_typing && (e.key==='f' || e.key==='F') && !(e.ctrlKey || e.altKey || e.metaKey)){
+  const _isTyping = (()=>{ const tag=(e.target&&e.target.tagName)||''; return tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(e.target&&e.target.isContentEditable); })();
+  // F: toggle lightbox
+  if(!_isTyping && (e.key==='f' || e.key==='F') && !(e.ctrlKey || e.altKey || e.metaKey)){
     e.preventDefault();
     if($('#lightbox').classList.contains('open')) closeLightbox(); else if(state.item) openLightbox(state.item); else if(state.curJob && visibleIds().length) openLightbox(visibleIds()[0]);
     return;
   }
   const lbOpen=$('#lightbox').classList.contains('open');
-  // Ctrl+Up/Down (top-level group) and Alt+Up/Down (subgroup) work both inside and outside lightbox
+  // Ctrl+Up/Down (top-level group) — also clears thumb focus
   if(e.ctrlKey && (e.key==='ArrowUp' || e.key==='ArrowDown')){
-    const tag=(e.target&&e.target.tagName)||''; const isTyping=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(e.target&&e.target.isContentEditable);
-    if(!isTyping) { e.preventDefault(); e.stopPropagation(); lightboxStepScene(e.key==='ArrowUp'? -1: 1, lbOpen); return; }
+    if(!_isTyping) { e.preventDefault(); e.stopPropagation(); clearFocusedThumb(); lightboxStepScene(e.key==='ArrowUp'? -1: 1, lbOpen); return; }
   }
   if(e.altKey && (e.key==='ArrowUp' || e.key==='ArrowDown')){
-    const tag=(e.target&&e.target.tagName)||''; const isTyping=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(e.target&&e.target.isContentEditable);
-    if(!isTyping) { e.preventDefault(); e.stopPropagation(); lightboxStepVariant(e.key==='ArrowUp'? -1: 1, lbOpen); return; }
+    if(!_isTyping) { e.preventDefault(); e.stopPropagation(); clearFocusedThumb(); lightboxStepVariant(e.key==='ArrowUp'? -1: 1, lbOpen); return; }
   }
+
+  // Thumbnail arrow focus navigation — only when a group is active OR when plain arrows pressed with focus context
+  // Spec: 在一级或者二级项目有focus的情况下，上下左右在thumbnail中进行focus切换
+  if(!e.ctrlKey && !e.altKey && !e.metaKey && (e.key==='ArrowLeft' || e.key==='ArrowRight' || e.key==='ArrowUp' || e.key==='ArrowDown')){
+    if(_isTyping) { /* allow typing cursor */ }
+    else if(lbOpen){
+      if(e.key==='ArrowLeft' || e.key==='ArrowRight'){ e.preventDefault(); lightboxStep(e.key==='ArrowLeft'? -1: 1); return; }
+      if(e.key==='ArrowUp' || e.key==='ArrowDown'){ e.preventDefault(); lightboxStepScene(e.key==='ArrowUp'? -1: 1, true); return; }
+    } else {
+      const hasGroupFocus = !!state.scene;
+      const canThumbNav = hasGroupFocus || focusedThumbId!==null;
+      if(canThumbNav){
+        e.preventDefault(); e.stopPropagation();
+        moveFocusedThumb(e.key);
+        return;
+      }
+    }
+  }
+
   if(lbOpen){
-    if(e.key==='ArrowLeft' || e.key==='ArrowRight'){ e.preventDefault(); lightboxStep(e.key==='ArrowLeft'? -1: 1); return; }
-    if(e.key==='ArrowUp' || e.key==='ArrowDown'){ e.preventDefault(); lightboxStepScene(e.key==='ArrowUp'? -1: 1, true); return; }
-    if(e.key==='NumpadAdd' || e.code==='NumpadAdd' || e.key==='Add'){ e.preventDefault(); state._suppressDrawer=true; doReview(state.item,'kept').finally(()=>{ state._suppressDrawer=false; setTimeout(()=> closeDrawer(), 0); }); return; }
-    if(e.key==='NumpadSubtract' || e.code==='NumpadSubtract' || e.key==='Subtract'){ e.preventDefault(); state._suppressDrawer=true; doReview(state.item,'rejected').finally(()=>{ state._suppressDrawer=false; setTimeout(()=> closeDrawer(), 0); }); return; }
+    // lightbox +/- and 1/2
+    const isPlus = (e.key==='+' || e.key==='=' || e.code==='NumpadAdd' || e.key==='Add' || (e.key==='NumpadAdd'));
+    const isMinus = (e.key==='-' || e.key==='_' || e.code==='NumpadSubtract' || e.key==='Subtract' || (e.key==='NumpadSubtract'));
+    if(isPlus || isMinus){
+      e.preventDefault();
+      const want = isPlus ? 'kept' : 'rejected';
+      // lb +/- always single-item via state.item
+      handlePlusMinusSingle(state.item, want);
+      return;
+    }
     if(e.key==='1' || e.key==='2'){
       if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA' || e.target.isContentEditable)) return;
       e.preventDefault();
@@ -50,14 +133,30 @@ document.addEventListener('keydown', e=>{
       return;
     }
   }
-  // Numpad +/- batch keep/reject for current top-level group (only when not in lightbox) - never open drawer
-  if(!lbOpen && (e.code==='NumpadAdd' || e.code==='NumpadSubtract' || e.key==='Add' || e.key==='Subtract')){
-    const tag2=(e.target&&e.target.tagName)||''; const isTyping2=tag2==='INPUT'||tag2==='TEXTAREA'||tag2==='SELECT'||(e.target&&e.target.isContentEditable);
-    if(!isTyping2 && state.curJob && state.scene){
-      const isAdd=(e.code==='NumpadAdd' || e.key==='Add');
-      const verdict=isAdd?'kept':'rejected';
-      const ids=(state.curJob.items||[]).filter(it=> groupKey(it)===state.scene).map(it=> it.id);
-      if(ids.length){ e.preventDefault(); e.stopPropagation(); state._suppressDrawer=true; (async()=>{ try{ $('#status').textContent=`批量${verdict==='kept'?'保留':'驳回'} ${ids.length} 项…`; for(const id of ids){ try{ await doReview(id, verdict, '', [], true); }catch{} } $('#status').textContent=`已${verdict==='kept'?'保留':'驳回'} ${ids.length} 项`; }finally{ state._suppressDrawer=false; setTimeout(()=> { closeDrawer(); $('#status').textContent=''; }, 600); } })(); return; }
+  // Main +/- (non-lightbox): dual mode
+  // - if focusedThumbId !== null: single-item +/- (image level)
+  // - else: batch +/- for current group (level-2)
+  {
+    const isPlus = (e.key==='+' || e.key==='=' || e.code==='NumpadAdd' || e.key==='Add');
+    const isMinus = (e.key==='-' || e.key==='_' || e.code==='NumpadSubtract' || e.key==='Subtract');
+    // also Numpad +/- without Shift: e.key may be 'Add'/'Subtract' only
+    // Do additional detection for '=' without shift? '=' is same key as '+'
+    // We also check e.key.length===1
+    const plusDetected = isPlus;
+    const minusDetected = isMinus;
+    if((plusDetected || minusDetected) && !lbOpen){
+      if(_isTyping) return;
+      e.preventDefault(); e.stopPropagation();
+      const want = plusDetected ? 'kept' : 'rejected';
+      if(focusedThumbId){
+        // image-level
+        handlePlusMinusSingle(focusedThumbId, want);
+      } else {
+        // batch-level (subgroup)
+        if(!state.curJob || !state.scene) return;
+        handlePlusMinusBatch(want);
+      }
+      return;
     }
   }
   if(e.key==='Escape'){ if(lbOpen) closeLightbox(); else if($('#drawer').classList.contains('open')) closeDrawer(); }

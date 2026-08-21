@@ -1,11 +1,36 @@
+const angleRingOrder = ['front','front-right-45','right','behind-right-135','behind','behind-left-135','left','front-left-45'];
+const angleRank = Object.fromEntries(angleRingOrder.map((s,i)=>[s,i]));
+const framingOrder = ['head','bust','half','cowboy','full'];
+const framingRank = Object.fromEntries(framingOrder.map((s,i)=>[s,i]));
+function rankAngle(s){ return angleRank[s] ?? 1e9; }
+function rankFraming(s){ return framingRank[s] ?? 1e9; }
+function sortGroupsRing(order){
+  order.sort((a,b)=>{
+    const ra = rankAngle(a), rb = rankAngle(b);
+    const ka = ra < 1e9, kb = rb < 1e9;
+    if(ka && kb) return ra - rb;
+    if(ka !== kb) return ka ? -1 : 1;
+    return a.localeCompare(b);
+  });
+  if(order.includes('__default__') && order.length>1){ order.splice(order.indexOf('__default__'),1); order.push('__default__'); }
+}
+function sortFramingsRing(keys){
+  keys.sort((a,b)=>{
+    const ra = rankFraming(a), rb = rankFraming(b);
+    const ka = ra < 1e9, kb = rb < 1e9;
+    if(ka && kb) return ra - rb;
+    if(ka !== kb) return ka ? -1 : 1;
+    return a.localeCompare(b);
+  });
+}
 function groupKey(it){ const g=(it.group||'').trim(); if(g) return g; const s=(it.scene||'').trim(); return s || '__default__'; }
 function subgroupKey(it, job){
   const sg=(it.subgroup||'').trim(); if(sg) return sg;
   const v=(it.variant||'').trim(); if(v) return v;
   // derive from tags/group_by if present
   if(it.tags && Array.isArray(it.group_by) && it.group_by.length>=2){
-    const v2=(it.tags[it.group_by[1]]||'').trim();
-    if(v2) return v2;
+    const a = String(it.tags[it.group_by[0]]||'').trim(); const b = String(it.tags[it.group_by[1]]||'').trim();
+    if(a && b) return b; if(a) return a;
   }
   if(it.tags && it.tags.sampler && it.tags.scheduler) return it.tags.sampler + ' x ' + it.tags.scheduler;
   // single item no grouping
@@ -23,7 +48,7 @@ function buildScenes(job){
     if(!by[sc]){ by[sc]=[]; order.push(sc); }
     by[sc].push(it);
   }
-  order.sort(); if(order.includes('__default__') && order.length>1){ order.splice(order.indexOf('__default__'),1); order.push('__default__'); }
+  sortGroupsRing(order);
   return order.map(scene=>{
     const items=by[scene];
     const variants={};
@@ -64,7 +89,7 @@ function renderScenes(){
   // we render "全部" as a selectable head row without variants
   const allEl=document.createElement('div'); allEl.className='scene-item';
   allEl.innerHTML=`<div class="scene-head" data-scene-all style="background: ${allActive?'rgba(34,197,94,.10)':'transparent'};border-radius:10px;">全部 (${state.curJob.items.length})<span style="margin-left:auto;color:var(--muted);font:500 11px/1 Fira Code,monospace">${filteredCountForScene('') } 项可见</span></div>`;
-  allEl.querySelector('[data-scene-all]').onclick=()=>{ state.scene=''; state.variant=''; pushHash(); renderScenes(); renderGallery(); };
+  allEl.querySelector('[data-scene-all]').onclick=()=>{ state.scene=''; state.variant=''; clearFocusedThumb(); pushHash(); renderScenes(); renderGallery(); };
   ul.appendChild(allEl);
 
   updateRerunBtn();
@@ -86,6 +111,7 @@ function renderScenes(){
       row.innerHTML=`<span>${escapeHtml(v)}${isLatestSub?' <span style="color:#7DD3FC">●</span>':''}</span><span class="badge">${c}</span>`;
       row.onclick=()=>{
         if(state.scene===g.scene && state.variant===v){ state.variant=''; } else { state.scene=g.scene; state.variant=v; }
+        clearFocusedThumb();
         pushHash(); renderScenes(); renderGallery();
       };
       body.appendChild(row);
@@ -99,7 +125,7 @@ function renderScenes(){
         renderScenes();
         return;
       }
-      state.scene=g.scene; state.variant=''; pushHash();
+      state.scene=g.scene; state.variant=''; clearFocusedThumb(); pushHash();
       sceneCollapsed.delete(g.scene);
       renderScenes(); renderGallery();
       requestAnimationFrame(()=> head.scrollIntoView({block:'nearest', behavior:'smooth'}));

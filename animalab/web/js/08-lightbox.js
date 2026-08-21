@@ -76,7 +76,7 @@ function lightboxStepScene(dir, openInLightbox){
   if(curIdx<0) curIdx=dir===1? -1 : 0;
   const nextIdx=curIdx+dir;
   if(nextIdx<0 || nextIdx>=scenes.length) return;
-  state.scene=scenes[nextIdx].scene; state.variant=''; pushHash(); renderScenes(); renderGallery();
+  state.scene=scenes[nextIdx].scene; state.variant=''; clearFocusedThumb(); pushHash(); renderScenes(); renderGallery();
   const ids=visibleIds();
   if(openInLightbox && ids.length) openLightbox(ids[0]);
 }
@@ -92,7 +92,7 @@ function lightboxStepVariant(dir, openInLightbox){
   if(nextPi<0||nextPi>=pairs.length) return;
   const [ns,nv]=pairs[nextPi];
   const beforeScene=state.scene, beforeVar=state.variant;
-  state.scene=ns; state.variant=nv||'';
+  state.scene=ns; state.variant=nv||''; clearFocusedThumb();
   let ids=visibleIds();
   // fallback to group-only if subgroup empty
   if(!ids.length){ state.variant=''; ids=visibleIds(); if(!ids.length){ state.scene=beforeScene; state.variant=beforeVar; return; } }

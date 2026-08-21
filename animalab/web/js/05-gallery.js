@@ -84,6 +84,79 @@ function imageUrl(item){
   if(!item.output||!item.output.filename) return '';
   return '/output/'+encodeURIComponent(state.date)+'/'+encodeURIComponent(state.curJob.job_id)+'/'+encodeURIComponent(item.output.filename);
 }
+function getThumbGridCols(){
+  const grid = document.getElementById('grid');
+  if(!grid || !grid.children.length) return 1;
+  // compute cols by comparing first two cards' top positions
+  const rect0 = grid.children[0].getBoundingClientRect();
+  let cols = 1;
+  for(let i=1;i<grid.children.length;i++){
+    const r = grid.children[i].getBoundingClientRect();
+    if(Math.abs(r.top - rect0.top) < 8) cols++;
+    else break;
+  }
+  if(cols<1) cols=1;
+  return cols;
+}
+function setFocusedThumb(id){
+  focusedThumbId = id;
+  // visual
+  document.querySelectorAll('.card.thumb-focused').forEach(el=> el.classList.remove('thumb-focused'));
+  const el = id ? document.querySelector('.card[data-id="'+CSS.escape(id)+'"]') : null;
+  if(el){ el.classList.add('thumb-focused'); el.scrollIntoView({block:'nearest', inline:'nearest'}); }
+  updateThumbFocusHint();
+}
+function clearFocusedThumb(){
+  focusedThumbId = null;
+  document.querySelectorAll('.card.thumb-focused').forEach(el=> el.classList.remove('thumb-focused'));
+  updateThumbFocusHint();
+}
+function updateThumbFocusHint(){
+  const pill = document.getElementById('thumbFocusHint');
+  if(!pill) return;
+  if(focusedThumbId){
+    pill.textContent = '● 图 ' + focusedThumbId;
+    pill.style.display = '';
+  } else {
+    if(state.scene){ pill.textContent = '○ 组 ' + (state.variant? state.scene+'/'+state.variant : state.scene); pill.style.display=''; }
+    else pill.style.display='none';
+  }
+}
+function moveFocusedThumb(dir){
+  const ids = filteredDisplayItems().map(x=> x.id);
+  if(!ids.length) return;
+  if(focusedThumbId===null){
+    // enter thumb mode
+    const start = dir==='ArrowLeft' || dir==='ArrowUp' ? ids[ids.length-1] : ids[0];
+    // For ArrowUp/Left we pick last so directional feels natural, but spec says after arrow we focus thumb
+    // Keep center: first or last based on dir; simplest: focus first
+    setFocusedThumb(dir==='ArrowLeft' || dir==='ArrowUp' ? ids[ids.length-1] : ids[0]);
+    if(dir==='ArrowUp' || dir==='ArrowDown'){
+      // re-evaluate up/down still via col
+      // For first focus, immediate up/down still moves via delta
+    }
+    return;
+  }
+  const curIdx = ids.indexOf(focusedThumbId);
+  const cols = getThumbGridCols();
+  let nextIdx;
+  if(dir==='ArrowRight') nextIdx = Math.min(curIdx+1, ids.length-1);
+  else if(dir==='ArrowLeft') nextIdx = Math.max(curIdx-1, 0);
+  else if(dir==='ArrowDown') nextIdx = Math.min(curIdx+cols, ids.length-1);
+  else if(dir==='ArrowUp') nextIdx = Math.max(curIdx-cols, 0);
+  else return;
+  // if staying same (edge), still clamp
+  if(curIdx===nextIdx && dir==='ArrowRight' && curIdx===ids.length-1) return;
+  if(curIdx===nextIdx && dir==='ArrowLeft' && curIdx===0) return;
+  setFocusedThumb(ids[nextIdx]);
+}
+function ensureFocusedThumbValid(){
+  if(focusedThumbId===null) return;
+  const ids = new Set(filteredDisplayItems().map(x=> x.id));
+  if(!ids.has(focusedThumbId)) clearFocusedThumb();
+  else updateThumbFocusHint();
+}
+
 function updateKpi(){
   const jobsEl=$('#kpiJobs'), imgEl=$('#kpiImages'), keptEl=$('#kpiKept'), revEl=$('#kpiReview');
   if(!jobsEl) return;
@@ -181,8 +254,10 @@ function renderGallery(){
       const curStatus=it.status;
       const needUpdate=was._verdict!==curVerdict || was._status!==curStatus || was._outFn!== (it.output&&it.output.filename);
       if(needUpdate){
+        const wasFocused = was.classList.contains('thumb-focused');
         const fresh=createCard(it);
         fresh._verdict=curVerdict; fresh._status=curStatus; fresh._outFn=it.output&&it.output.filename;
+        if(wasFocused) fresh.classList.add('thumb-focused');
         was.replaceWith(fresh);
       }
       // ensure order
@@ -198,7 +273,7 @@ function renderGallery(){
     }
     idx++;
   }
-  updateBatchBar(); updateKpi();
+  updateBatchBar(); updateKpi(); ensureFocusedThumbValid();
 }
 function applyIncrementalUpdate(prevJob, nextJob){
   if(!prevJob || !nextJob) { renderGallery(); return; }
