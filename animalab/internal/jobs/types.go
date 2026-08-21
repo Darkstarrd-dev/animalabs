@@ -38,6 +38,8 @@ type Job struct {
 	Date          string   `json:"date"`
 	CreatedAt     string   `json:"created_at"`
 	Defaults      Defaults `json:"defaults"`
+	GroupOrder    []string `json:"group_order,omitempty"`
+	SubgroupOrder []string `json:"subgroup_order,omitempty"`
 	Items         []Item   `json:"items"`
 }
 
@@ -85,15 +87,15 @@ type Item struct {
 }
 
 type Output struct {
-	Filename string `json:"filename"`
-	W        int    `json:"w"`
-	H        int    `json:"h"`
-	Bytes    int    `json:"bytes"`
-	SHA16    string `json:"sha16"`
-	PromptID string `json:"prompt_id"`
-	ElapsedMs int64 `json:"elapsed_ms"`
-	Deleted  bool   `json:"deleted,omitempty"`
-	Missing  bool   `json:"missing,omitempty"`
+	Filename  string `json:"filename"`
+	W         int    `json:"w"`
+	H         int    `json:"h"`
+	Bytes     int    `json:"bytes"`
+	SHA16     string `json:"sha16"`
+	PromptID  string `json:"prompt_id"`
+	ElapsedMs int64  `json:"elapsed_ms"`
+	Deleted   bool   `json:"deleted,omitempty"`
+	Missing   bool   `json:"missing,omitempty"`
 	// BatchOutputs holds siblings when batch>1 (siblings _02..N). Primary stays in Output.
 	BatchOutputs []Output `json:"batch_outputs,omitempty"`
 }

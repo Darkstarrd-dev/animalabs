@@ -1,78 +1,69 @@
 package jobs
 
 import (
-       "fmt"
-       "sort"
-       "strings"
+	"fmt"
+	"sort"
+	"strings"
 )
 
 // nine-grid ring order: character at 5, counterclockwise 2→3→6→9→8→7→4→1 (front start)
 var angleRingOrder = []string{
-       "front",
-       "front-right-45",
-       "right",
-       "behind-right-135",
-       "behind",
-       "behind-left-135",
-       "left",
-       "front-left-45",
+	"front",
+	"front-right-45",
+	"right",
+	"behind-right-135",
+	"behind",
+	"behind-left-135",
+	"left",
+	"front-left-45",
 }
-
-var angleRank = func() map[string]int {
-       m := map[string]int{}
-       for i, s := range angleRingOrder {
-               m[s] = i
-       }
-       return m
-}()
 
 // framing display order: close → far
 var framingOrder = []string{"head", "bust", "half", "cowboy", "full"}
 
-var framingRank = func() map[string]int {
-       m := map[string]int{}
-       for i, s := range framingOrder {
-               m[s] = i
-       }
-       return m
-}()
-
-func rankAngle(s string) (int, bool) {
-       r, ok := angleRank[s]
-       return r, ok
+func buildRank(primary, fallback []string) map[string]int {
+	m := map[string]int{}
+	for _, s := range primary {
+		if _, ok := m[s]; !ok {
+			m[s] = len(m)
+		}
+	}
+	for _, s := range fallback {
+		if _, ok := m[s]; !ok {
+			m[s] = len(m)
+		}
+	}
+	return m
 }
 
-func rankFraming(s string) (int, bool) {
-       r, ok := framingRank[s]
-       return r, ok
+func sortGroupsRing(order []string, j *Job) {
+	rank := buildRank(j.GroupOrder, angleRingOrder)
+	sort.SliceStable(order, func(a, b int) bool {
+		ra, oka := rank[order[a]]
+		rb, okb := rank[order[b]]
+		if oka && okb {
+			return ra < rb
+		}
+		if oka != okb {
+			return oka
+		}
+		return order[a] < order[b]
+	})
 }
 
-func sortGroupsRing(order []string) {
-       sort.Slice(order, func(a, b int) bool {
-               ra, oka := rankAngle(order[a])
-               rb, okb := rankAngle(order[b])
-               if oka && okb {
-                       return ra < rb
-               }
-               if oka != okb {
-                       return oka // known angles first
-               }
-               return order[a] < order[b]
-       })
-}
-
-func sortFramingsRing(keys []string) {
-       sort.Slice(keys, func(a, b int) bool {
-               ra, oka := rankFraming(keys[a])
-               rb, okb := rankFraming(keys[b])
-               if oka && okb {
-                       return ra < rb
-               }
-               if oka != okb {
-                       return oka
-               }
-               return keys[a] < keys[b]
-       })
+func sortFramingsRing(keys []string, j *Job) {
+	rank := buildRank(j.SubgroupOrder, framingOrder)
+	sort.SliceStable(keys, func(a, b int) bool {
+		ra, oka := rank[keys[a]]
+		rb, okb := rank[keys[b]]
+		if oka && okb {
+			return ra < rb
+		}
+		if oka != okb {
+			return oka
+		}
+		return keys[a] < keys[b]
+	})
 }
 
 func OrderedIndices(j *Job, force bool) []int {
@@ -101,7 +92,7 @@ func OrderedIndices(j *Job, force bool) []int {
 		}
 		by[gk].variants[sk]++
 	}
-       sortGroupsRing(order)
+	sortGroupsRing(order, j)
 	if len(order) > 1 {
 		for i, s := range order {
 			if s == "__default__" {
@@ -118,7 +109,7 @@ func OrderedIndices(j *Job, force bool) []int {
 		for k := range gi.variants {
 			skeys = append(skeys, k)
 		}
-		sortFramingsRing(skeys)
+		sortFramingsRing(skeys, j)
 		for _, sk := range skeys {
 			var bucket []int
 			for _, idx := range gi.items {
@@ -128,13 +119,6 @@ func OrderedIndices(j *Job, force bool) []int {
 				}
 				if want == sk {
 					bucket = append(bucket, idx)
-				}
-			}
-			for i := 0; i < len(bucket); i++ {
-				for k := i + 1; k < len(bucket); k++ {
-					if j.Items[bucket[k]].ID < j.Items[bucket[i]].ID {
-						bucket[i], bucket[k] = bucket[k], bucket[i]
-					}
 				}
 			}
 			out = append(out, bucket...)
@@ -236,7 +220,7 @@ func GroupByScene(j *Job) []SceneGroup {
 		}
 		g.Variants[sk]++
 	}
-	sortGroupsRing(order)
+	sortGroupsRing(order, j)
 	if len(order) > 1 {
 		for i, s := range order {
 			if s == "__default__" {

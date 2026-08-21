@@ -1,25 +1,27 @@
 const angleRingOrder = ['front','front-right-45','right','behind-right-135','behind','behind-left-135','left','front-left-45'];
-const angleRank = Object.fromEntries(angleRingOrder.map((s,i)=>[s,i]));
 const framingOrder = ['head','bust','half','cowboy','full'];
-const framingRank = Object.fromEntries(framingOrder.map((s,i)=>[s,i]));
-function rankAngle(s){ return angleRank[s] ?? 1e9; }
-function rankFraming(s){ return framingRank[s] ?? 1e9; }
-function sortGroupsRing(order){
+function sortGroupsRing(order, job){
+  const rank = new Map();
+  if(job && Array.isArray(job.group_order)) job.group_order.forEach((s,i)=>{ if(!rank.has(s)) rank.set(s,i); });
+  angleRingOrder.forEach(s=>{ if(!rank.has(s)) rank.set(s, rank.size); });
   order.sort((a,b)=>{
-    const ra = rankAngle(a), rb = rankAngle(b);
-    const ka = ra < 1e9, kb = rb < 1e9;
-    if(ka && kb) return ra - rb;
-    if(ka !== kb) return ka ? -1 : 1;
+    const ra = rank.has(a)?rank.get(a):1e9, rb = rank.has(b)?rank.get(b):1e9;
+    const ka = ra<1e9, kb = rb<1e9;
+    if(ka&&kb) return ra-rb;
+    if(ka!==kb) return ka?-1:1;
     return a.localeCompare(b);
   });
   if(order.includes('__default__') && order.length>1){ order.splice(order.indexOf('__default__'),1); order.push('__default__'); }
 }
-function sortFramingsRing(keys){
+function sortFramingsRing(keys, job){
+  const rank = new Map();
+  if(job && Array.isArray(job.subgroup_order)) job.subgroup_order.forEach((s,i)=>{ if(!rank.has(s)) rank.set(s,i); });
+  framingOrder.forEach(s=>{ if(!rank.has(s)) rank.set(s, rank.size); });
   keys.sort((a,b)=>{
-    const ra = rankFraming(a), rb = rankFraming(b);
-    const ka = ra < 1e9, kb = rb < 1e9;
-    if(ka && kb) return ra - rb;
-    if(ka !== kb) return ka ? -1 : 1;
+    const ra = rank.has(a)?rank.get(a):1e9, rb = rank.has(b)?rank.get(b):1e9;
+    const ka = ra<1e9, kb = rb<1e9;
+    if(ka&&kb) return ra-rb;
+    if(ka!==kb) return ka?-1:1;
     return a.localeCompare(b);
   });
 }
@@ -48,7 +50,7 @@ function buildScenes(job){
     if(!by[sc]){ by[sc]=[]; order.push(sc); }
     by[sc].push(it);
   }
-  sortGroupsRing(order);
+  sortGroupsRing(order, job);
   return order.map(scene=>{
     const items=by[scene];
     const variants={};
